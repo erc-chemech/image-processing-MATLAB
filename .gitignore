@@ -1,0 +1,3 @@
+# Ignore temp MATLAB files associated with .m files
+*.asv
+
