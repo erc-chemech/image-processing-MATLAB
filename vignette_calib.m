@@ -2,7 +2,16 @@ function vignette_calib(varargin)
 % Author: Joshua Yeh
 % Date created: 2017/10/25
 % 
-%% VARARGIN
+%% DESCRIPTION:
+% This function script accepts a list of images according to a predefined
+% format and performs a flat-field correction and background subtraction.  
+% Images are scaled on grey scale (0 to 255) and saturated pixels (>255) 
+% are replaced with a pixel value of 255. The number of saturated pixels 
+% is displayed in the command window.
+% Plots of the 'Nth' raw image, the white reference image, and the corrected
+% images are shown along with a greyscale intensity of the corrected image.
+% 
+%% INPUT VARIABLES
 % vignette_calib(filenames)
 %   filenames: structure variable that contains a list of filename strings
 %   (including paths and extensions) 'filenames' must follow the following
@@ -18,14 +27,6 @@ function vignette_calib(varargin)
 % 
 % vignette_calib(filenames,image_out,N)
 % 
-%% DESCRIPTION:
-% This function script accepts a list of images according to a predefined
-% format and performs a flat-field correction and background subtraction.  
-% Images are scaled on grey scale (0 to 255) and saturated pixels (>255) 
-% are replaced with a pixel value of 255. The number of saturated pixels 
-% is displayed in the command window.
-% Plots of the 'Nth' raw image, the white reference image, and the corrected
-% images are shown along with a greyscale intensity of the corrected image.
 %%
 
 % Figure out what the variable inputs are
