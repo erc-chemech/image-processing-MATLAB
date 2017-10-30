@@ -9,6 +9,8 @@ function output=import_tiff_stack(file)
 %% OUTPUT VARIABLES
 % output: structure variable contain the raw image file and integrated
 %   intensity through the thickness of the stack
+% 
+%%
 
 disp(['Importing ',file]);
 tiff_info=imfinfo(file);%tiff info

@@ -12,6 +12,8 @@ function output=flat_field_corr(raw,B,white)
 % 
 %% OUTPUT VARIABLES
 % output: corrected image
+% 
+%%
 
 image_corr=@(image,black,white) (image-black)./(white-black);
 output=(raw-B)./(white-B);
