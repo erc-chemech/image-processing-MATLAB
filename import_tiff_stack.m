@@ -3,8 +3,13 @@ function output=import_tiff_stack(file)
 % This function imports a stacked tiff file and stores in an ouput variable
 % structure.
 %
-% INPUT VARIABLES
+%% INPUT VARIABLES
 % file: names of the tiff file to be imported
+% 
+%% OUTPUT VARIABLES
+% output: structure variable contain the raw image file and integrated
+%   intensity through the thickness of the stack
+
 disp(['Importing ',file]);
 tiff_info=imfinfo(file);%tiff info
 tiff_stack=imread(file,1);%read first image in the stack

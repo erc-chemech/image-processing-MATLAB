@@ -4,13 +4,13 @@ function mov=extract_frames(filename,frame_range)
 % Author: Joshua Yeh
 % Date created: 2017/10/28
 %
-% INPUT VARIABLES
+%% INPUT VARIABLES
 % filename: name of video file (RGB file)
 % frame_range: range of frames [first last] to extract from video file
 %   -If user inputs the string 'all' for the frame_range value, the
 %   function will import all of the frames from the video file.
 % 
-% OUTPUT VARIABLES
+%% OUTPUT VARIABLES
 % mov: a structure variable containing the extracted frames
 %   fieldnames:
 %       CData: frame data
