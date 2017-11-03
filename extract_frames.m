@@ -1,4 +1,4 @@
-function mov=extract_frames(filename,frame_range)
+function mov=extract_frames(filename,frames)
 % This functions serves to extract a range of frames from a video file. The
 % frames are stored in a structure variable.
 % Author: Joshua Yeh
@@ -6,7 +6,8 @@ function mov=extract_frames(filename,frame_range)
 %
 %% INPUT VARIABLES
 % filename: name of video file (RGB file)
-% frame_range: range of frames [first last] to extract from video file
+% frames: frame idices that will be extracted from the video file (single
+% row or col array containing integers or of type uint8).
 %   -If user inputs the string 'all' for the frame_range value, the
 %   function will import all of the frames from the video file.
 % 
@@ -21,15 +22,28 @@ function mov=extract_frames(filename,frame_range)
 % apparant graphics card issue that crashes MATLAB)
 
 % Check to see if user inputs 'all' for abs_frame_index
-if strcmp(frame_range,'all')==1&&ischar(frame_range)==1
+if strcmp(frames,'all')==1&&ischar(frames)==1
     disp('This fcn will attempt to import all frames.');    
-elseif strcmp(frame_range,'all')==0&&ischar(frame_range)==1
+elseif strcmp(frames,'all')==0&&ischar(frames)==1
     disp('Did not recognize char input for abs_frame_index.');
     disp('Frame import aborted.');
     return
 else
 end
 
+% Check to see if the frames array contains integers
+if isinteger(frames)==0
+    disp('Variable input for frames is not of type uint8.');
+    disp('Attempting to convert ''frames'' into uint8.');
+    try
+        frames=uint8(frames);
+    catch
+        disp('Unable to convert to uint8. Frame import aborted.');
+        return
+    end
+end
+
+% Turn off hardware acceleration
 matlab.video.read.UseHardwareAcceleration('off')
 
 %Create a VideoReader object
@@ -48,8 +62,8 @@ disp('Importing frames (this can take awhile)');
 while hasFrame(Vidobj)
     % If the frame falls within the designated frame range, store the frame
     % in the mov structure variable.
-    if ischar(frame_range)==0%if user specifies range of frames to import
-        if n>=frame_range(1)&&n<=frame_range(2)
+    if ischar(frames)==0%if user specifies range of frames to import
+        if ismember(n,frames)==1
             mov(k).CData=readFrame(Vidobj);%store the frame
             mov(k).abs_frame_index=n;%store the absolute frame index
             if mod(k,100)==0%update user every 100 frames are read
@@ -60,7 +74,7 @@ while hasFrame(Vidobj)
             readFrame(Vidobj);%need this to advance to the next frame
         end
     % If user specifies to import all frames.
-    elseif ischar(frame_range)==1&&strcmp(frame_range,'all')
+    elseif ischar(frames)==1&&strcmp(frames,'all')
         mov(k).CData=readFrame(Vidobj);%store the frame
         mov(k).abs_frame_index=n;%store the absolute frame index
         if mod(k,100)==0%update user every 100 frames are read
