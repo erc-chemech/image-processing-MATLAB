@@ -7,7 +7,7 @@ function mov=extract_frames(filename,frames)
 %% INPUT VARIABLES
 % filename: name of video file (RGB file)
 % frames: frame idices that will be extracted from the video file (single
-% row or col array containing integers or of type uint8).
+% row or col array containing integers or of type uint64).
 %   -If user inputs the string 'all' for the frame_range value, the
 %   function will import all of the frames from the video file.
 % 
@@ -36,7 +36,7 @@ if isinteger(frames)==0
     disp('Variable input for frames is not of type uint8.');
     disp('Attempting to convert ''frames'' into uint8.');
     try
-        frames=uint8(frames);
+        frames=uint64(frames);
     catch
         disp('Unable to convert to uint8. Frame import aborted.');
         return
@@ -85,4 +85,4 @@ while hasFrame(Vidobj)
     n=n+1;
 end
 disp('Import success');
-disp(['Imported ',num2str(k-1),' frames']);
+disp(['Imported ',num2str(k-1),' frame(s)']);

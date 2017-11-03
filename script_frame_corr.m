@@ -15,7 +15,7 @@ function [mov,f1]=script_frame_corr(varargin)
 %% INPUT VARIABLES
 % Must contain at least 4 variables
 % filename: name of the file including the path
-% frames: a uint8 single col or row array containing indices of the frames
+% frames: a uint64 single col or row array containing indices of the frames
 % to be analyzed
 % ROI: specifies the region of interest (ROI) of the original frame that
 % will be analyzed.
@@ -34,7 +34,7 @@ function [mov,f1]=script_frame_corr(varargin)
 % f1: figure handle of the plots created by this function script
 % 
 %% Determine what variables were inputted
-switch nargin
+switch nargin%must contain at least 4 variables
     case 4
         filename=varargin{1};
         frames=varargin{2};
@@ -58,19 +58,33 @@ switch nargin
         flag=varargin{6};
 end
 %% Import selected frames
-mov=extract_frames(filename,frames);
+try
+    disp('Checking to see if mov structure has already been created...');
+    mov=evalin('base','mov');
+    %Check to see if the mov variable structure contains all of the frames
+    %needed
+    temp=[mov.abs_frame_index];
+    for dum=1:length(frames)
+        if ismember(frames(dum),temp)==0%if missing a frame, force an error
+            err
+        end
+    end
+catch
+    disp('Mov structure was not found, importing frames from filename...');
+    mov=extract_frames(filename,frames);
+end
 
 %% View selected frame
 % Setup video file for recording
 if flag==1
-    v=VideoWriter('Sample_004.mp4','MPEG-4');%create video object
+    v=VideoWriter('output.mp4','MPEG-4');%create video object
     v.FrameRate=3;
     open(v);%open video object
 end
 
 for fn=double(frames)
     % Index of frame in mov struct associated with fn
-    k=find(mov.abs_frame_index==200);
+    k=find([mov.abs_frame_index]==fn);
     
     % Create a figure (rgb)
     f1.f=figure(1); clf(figure(1));
@@ -90,13 +104,13 @@ for fn=double(frames)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Define white reference region
     white=mov(k).CData(ref_ROI(1):ref_ROI(2),ref_ROI(3):ref_ROI(4),:);
-    white2=rgb_correction(white,white,'simple',250,0);
+    white2=rgb_correction(white,white,'simple',240,0);
     [~,~,white_b]=rgb_ratio(white2);
     pd=fitdist(white_b(:),'normal');%fit normal dist to histogram    
 
     % Extract image frame (rgb)
     rgb_image=mov(k).CData(ROI(1):ROI(2),ROI(3):ROI(4),:);
-    rgb_image2=rgb_correction(rgb_image,white,'simple');
+    rgb_image2=rgb_correction(rgb_image,white,'simple',240);
     [R_channel,G_channel,B_channel]=rgb_ratio(rgb_image2);
     channel=B_channel;%scale onto grayscale (0 to 255)
 
@@ -104,7 +118,7 @@ for fn=double(frames)
     channel2=channel;
     channel3=medfilt2(channel2,[10 10]);
     channel4=rm_lowest_bin(channel3,thresh,0);
-    channel5=(channel4-thresh).*(250/255);
+    channel5=(channel4-thresh).*(240/255);
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Filtered contour plot with transparent original image overlay
@@ -171,3 +185,4 @@ end
 if flag==1
     close(v);
 end
+disp('"script_frame_corr" automated process is finished.');
