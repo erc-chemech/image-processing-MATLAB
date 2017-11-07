@@ -1,4 +1,4 @@
-function I_corr=rgb_correction(varargin)
+function I_corr=rgb_correction(I,ref,varargin)
 % Author: Joshua Yeh
 % Date created: 2017/11/01
 % 
@@ -37,29 +37,21 @@ function I_corr=rgb_correction(varargin)
 % Determine number of inputs
 switch nargin
     case 2
-        I=varargin{1};
-        ref=varargin{2};
         type='simple';
         thresh=250;
         flag=1;        
     case 3
-        I=varargin{1};
-        ref=varargin{2};
-        type=varargin{3};
+        type=varargin{1};
         thresh=250;
         flag=1;        
     case 4
-        I=varargin{1};
-        ref=varargin{2};
-        type=varargin{3};
-        thresh=varargin{4};
+        type=varargin{1};
+        thresh=varargin{2};
         flag=1;
     case 5
-        I=varargin{1};
-        ref=varargin{2};
-        type=varargin{3};
-        thresh=varargin{4};
-        flag=varargin{5};
+        type=varargin{1};
+        thresh=varargin{2};
+        flag=varargin{3};
 end
 
 % convert I and ref to double
