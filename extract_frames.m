@@ -32,9 +32,9 @@ else
 end
 
 % Check to see if the frames array contains integers
-if isinteger(frames)==0
-    disp('Variable input for frames is not of type uint8.');
-    disp('Attempting to convert ''frames'' into uint8.');
+if isinteger(frames)==0&&ischar(frames)==0
+    disp('Variable input for frames is not of type uint64.');
+    disp('Attempting to convert ''frames'' into uint64.');
     try
         frames=uint64(frames);
     catch

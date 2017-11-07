@@ -16,16 +16,18 @@ function I_corr=rgb_correction(varargin)
 % values above 255 is replaced with values of 255 (saturation).
 % 
 %% INPUT VARIABLES
+% I_corr=rgb_correction(I,ref,type,thresh,flag)
+% 
 % I: a 2D RGB image that will be color-corrected to a reference white
 % background (double)
 % ref: a reference (sub) image representing the white reference standard
 % (double)
-% type: defines the type of rgb correction to be performed
+% type (optional): defines the type of rgb correction to be performed
 %   -'simple': A simple color correction by using a reference white area
 %   and assuming that r=b=g
-% thresh: threshold values in which the pixels values will be corrected to
+% thresh (optional): threshold values in which the pixels values will be corrected to
 % (default is 250)
-% flag: a flag that tells the program to replace values >255 with 255
+% flag (optional): a flag that tells the program to replace values >255 with 255
 % (saturation) when flag=1
 %
 %% OUTPUT VARIABLES
@@ -62,9 +64,11 @@ end
 
 % convert I and ref to double
 I=double(I);
-ref=ref;
+ref=double(ref);
 switch type
     case 'simple'
+        %calibrate pixels to a white region by rescaling the pixels to
+        %thresh
         for dum=1:3
             white=ref(:,:,dum);
             channel=I(:,:,dum);

@@ -99,7 +99,7 @@ for fn=double(frames)
     set(f1.s4,'position',[0.7 0.1 0.29 0.27]);
     set(findall(f1.f,'type','axes'),'nextplot','add','box','on');
     mymap=flipud(parula);%define colormap
-    crange=[0 0.05];%c axis range
+    crange=[1/3-0.05*0.5 1/3+0.05*0.5];%c axis range
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Define white reference region
@@ -118,7 +118,7 @@ for fn=double(frames)
     channel2=channel;
     channel3=medfilt2(channel2,[10 10]);
     channel4=rm_lowest_bin(channel3,thresh,0);
-    channel5=(channel4-thresh).*(240/255);
+    channel5=(channel4-thresh).*(240/255)+1/3;
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Filtered contour plot with transparent original image overlay
@@ -158,7 +158,7 @@ for fn=double(frames)
         'image after corrections']);
     xlabel(f1.s4,'Relative Intensity');
     ylabel(f1.s4,'Counts');
-    f1.s4.XLim(1)=0;
+    f1.s4.XLim(1)=1/3;
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % format axes
