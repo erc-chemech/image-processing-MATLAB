@@ -1,4 +1,4 @@
-function gray_image_out=rm_lowest_bin(gray_image,thresh,thresh_area)
+function gray_image_out=rm_lower_bins(gray_image,thresh,thresh_area)
 % Author: Joshua Yeh
 % Date created: 2017/10/31
 %
