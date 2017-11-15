@@ -15,8 +15,10 @@ function I_corr=rgb_correction(I,ref,varargin)
 % an abundance of oversatuated pixels. Using this adjusment, any pixel
 % values above 255 is replaced with values of 255 (saturation).
 % 
-%% INPUT VARIABLES
+%% SYNTAX
 % I_corr=rgb_correction(I,ref,type,thresh,flag)
+% 
+%% INPUT VARIABLES
 % 
 % I: a 2D RGB image that will be color-corrected to a reference white
 % background (double)

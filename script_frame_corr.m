@@ -39,8 +39,12 @@ function [mov,f1]=script_frame_corr(filename,frames,ROI,ref_ROI,varargin)
 % 
 %% Determine what variables were inputted
 switch nargin%must contain at least 4 variables
-    case 5
+    case 4
         channel_number=3;
+        thresh=0.34;
+        flag=0;
+    case 5
+        channel_number=varargin{1};
         thresh=0.34;
         flag=0;
     case 6

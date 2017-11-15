@@ -1,3 +1,5 @@
 # Ignore temp MATLAB files associated with .m files
 *.asv
-
+#Ignore vim text files
+_vimrc
+._vimrc.un~
