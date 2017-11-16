@@ -29,8 +29,8 @@ function mov=extract_frames(filename,frames,varargin)
 % mov: a structure variable containing the extracted frames
 %   fieldnames:
 %       CData: frame data
-%       cmap: colormap
 %       abs_frame_index: absolute frame index (in reference to video file)
+%       CurrentTime: the time stamp associated with the frame
 
 % Turn off hardware acceleration to prevent VideoReader from crashing (an
 % apparant graphics card issue that crashes MATLAB)
