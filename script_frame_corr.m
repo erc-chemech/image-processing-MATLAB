@@ -14,6 +14,9 @@ function [mov,f1]=script_frame_corr(filename,frames,ROI,ref_ROI,varargin)
 % 
 %% SYNTAX
 % script_frame_corr(filename,frames,ROI,ref_ROI,varargin)
+% script_frame_corr(filename,frames,ROI,ref_ROI,channel_number)
+% script_frame_corr(filename,frames,ROI,ref_ROI,channel_number,thresh)
+% script_frame_corr(filename,frames,ROI,ref_ROI,channel_number,thresh,flag)
 % 
 %% INPUT VARIABLES
 % Must contain at least 4 variables
@@ -89,7 +92,7 @@ for fn=double(frames)
     f1.f=figure(1); clf(figure(1));
     f1.f.Color='w';
     f1.f.Name=['frame: ',num2str(fn)];
-    gap=[0.1 0.04];%Define gap associated with subplot creation
+    gap=[0.04];%Define gap associated with subplot creation
     f1.s1=subtightplot(2,3,[1 4],gap);
     f1.s2=subtightplot(2,3,[2 5],gap);
     f1.s3=subtightplot(2,3,3);
@@ -100,7 +103,7 @@ for fn=double(frames)
     mymap=flipud(parula);%define colormap
     crange=[1/3-0.05*0.5 1/3+0.05*0.5];%c axis range
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Define white reference region
     white=mov(k).CData(ref_ROI(1):ref_ROI(2),ref_ROI(3):ref_ROI(4),:);
     white2=rgb_correction(white,white,'simple',240,0);
@@ -131,13 +134,13 @@ for fn=double(frames)
         case 3%blue channel
             channel4=rm_lower_bins(channel3,thresh,0);
     end
-    channel5=(channel4-thresh).*(240/255)+1/3;
+    channel5=(channel4-thresh)+1/3;
     channel5(1:5,:)=nan;
     channel5(end-4:end,:)=nan;
     channel5(:,1:5)=nan;
     channel5(:,end-4:end)=nan;
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Filtered contour plot with transparent original image overlay
     contour(f1.s1,channel5,'fill','on');
     colormap(f1.s1,mymap);

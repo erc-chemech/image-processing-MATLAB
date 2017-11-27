@@ -17,9 +17,11 @@ function mov=extract_frames(filename,frames,varargin)
 %   frames between a designated time interval, described by the variable
 %   time_interval.
 % time_interval: a 3 element double array describing the time interval for
-% extracting frames. The first element is the start time and the second
-% element is the end time. The third element describes the frequency in
-% which to extract the frame. For example:
+% extracting frames. 
+%       time_interval(1): The first element is the start time
+%       time_interval(2): The second element is the end time.
+%       time_interval(3): The third element describes the frame period in
+%       which to extract a frame. For example:
 %               if time_interval(3)=1, then collect every frame within the
 %               time interval
 %               if time_interval(3)=5, then collect every 5 frames within
@@ -44,17 +46,20 @@ elseif strcmp(frames,'time interval')==1&&ischar(frames)==1
             error('No specified time interval detected!');
         case 3
             %check that the user properly input time interval
-            if strcmp(class(varargin{1}),'double')&&length(varargin{1})==3
+            if isa(varargin{1},'double')&&length(varargin{1})==3
                 time_interval=[sort(varargin{1}(1:2)) varargin{1}(3)];%time interval
                 disp(['Extracting frames from time ',num2str(time_interval(1)),...
                     ' to ',num2str(time_interval(2)),'.']);
-                disp(['Data is extracted every ',num2str(time_interval(3)),' frames.']);
+                disp(['Data is extracted every ',num2str(time_interval(3)),...
+                    ' frames.']);
             else
                 disp('Frame import aborted!');
-                error('''time_interval'' is not recognized to be a 2 element double array');
+                error(['''time_interval'' is not recognized to be a',...
+                    '2 element double array']);
             end
     end
-elseif (strcmp(frames,'all')==0||strcmp(frames,'time interval')==0)&&ischar(frames)==1
+elseif (strcmp(frames,'all')==0||strcmp(frames,'time interval')==0)&&...
+        ischar(frames)==1
     disp('Frame import aborted!');
     error(['Did not recognize char input for input var ''frames''. ',...
         '\n''frames'' appears to be a %s'],class(frames));        
@@ -88,7 +93,7 @@ mov(5000).CData=[];%preallocate structure array
 
 n=1;%counter absolute frame index for the video file
 k=1;%counter index for mov structure
-kk=1;%counter used when user desgnates a time interval (for det. when to extract frame)
+kk=1;%counter used when user designates time interval (to det. frame extraction)
 
 disp('Importing frames (this can take awhile).');
 while hasFrame(Vidobj)
@@ -142,7 +147,8 @@ while hasFrame(Vidobj)
     % Warn the user if the number of extracted frames exceed 500
     if k>500&&mod(k,100)==0
         [user,~] = memory;
-        warning([newline,'MemAvailableAllArrays: ',num2str(user.MemAvailableAllArrays./1e6),'MB',newline,...
+        warning([newline,'MemAvailableAllArrays: ',...
+            num2str(user.MemAvailableAllArrays./1e6),'MB',newline,...
             'MemUsedMATLAB: ',num2str(user.MemUsedMATLAB./1e6),'MB',newline,...
             'Number of frames extracted is over 500. '...
             'MATLAB can crash if memory usage is too high!',newline,...

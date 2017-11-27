@@ -30,7 +30,7 @@ function I_corr=rgb_correction(I,ref,varargin)
 % thresh (optional): threshold values in which the pixels values will be corrected to
 % (default is 250)
 % flag (optional): a flag that tells the program to replace values >255 with 255
-% (saturation) when flag=1
+% (saturation) when flag=1 (default flag is 1)
 %
 %% OUTPUT VARIABLES
 % I_corr: corrected rgb image on normalized rgb ratio (Grassman's Law)
