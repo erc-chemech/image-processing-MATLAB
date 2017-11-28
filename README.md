@@ -24,3 +24,8 @@ subplot_tight
 	-Function allows better control over margins of subplot axes in the figure
 	-Author and further information can be found in the m-function script
 
+shadedErrorBar
+	-Downloaded rom MATLAB forums
+	-Function allows for prettier continous errorbar plots
+	-Author and further informatio can be found in te m-function script
+
