@@ -80,7 +80,7 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
         handles.current=abs_frame_index(ii-1);%go back one frame        
         
         imagesc(handles.f1.s1,handles.mov(ii-1).CData);%show frame
-%         axis image;
+        axis image;
         title(handles.f1.s1,['Frame (abs): ',num2str(abs_frame_index(ii-1)),'/',num2str(abs_frame_index(end)),...
         ', Timestamp: ',num2str(handles.mov(ii-1).CurrentTime)]);
         drawnow;
@@ -93,7 +93,7 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
         f=ancestor(hObject,'figure');
         handles=guidata(f);
         if handles.current==handles.mov(end).abs_frame_index
-            disp('Cannot go forwards!');
+            disp('Cannot go forward!');
             return
         end
         cla(handles.f1.s1);
@@ -103,7 +103,7 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
         
         
         imagesc(handles.f1.s1,handles.mov(ii+1).CData);%show frame
-%         axis image;
+        axis image;
         title(handles.f1.s1,['Frame (abs): ',num2str(abs_frame_index(ii+1)),'/',num2str(abs_frame_index(end)),...
         ', Timestamp: ',num2str(handles.mov(ii+1).CurrentTime)]);
         drawnow;
@@ -126,7 +126,7 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
         
         ii=find(abs_frame_index==handles.current);
         imagesc(handles.f1.s1,handles.mov(ii).CData);%show frame
-%         axis image;
+        axis image;
         title(handles.f1.s1,['Frame (abs): ',num2str(abs_frame_index(ii)),'/',num2str(abs_frame_index(end)),...
         ', Timestamp: ',num2str(handles.mov(ii).CurrentTime)]);
         drawnow;

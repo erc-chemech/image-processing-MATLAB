@@ -2,6 +2,9 @@ function I_corr=rgb_correction(I,ref,varargin)
 % Author: Joshua Yeh
 % Date created: 2017/11/01
 % 
+%% SYNTAX
+% I_corr=rgb_correction(I,ref,type,thresh,flag)
+% 
 %% DESCRIPTION
 % This function performs an RGB correction to an rgb image, I, in reference
 % to a white background. The input images should have values between 0 and
@@ -14,9 +17,6 @@ function I_corr=rgb_correction(I,ref,varargin)
 % are corrected to a threshold value (~250) so that that there will not be
 % an abundance of oversatuated pixels. Using this adjusment, any pixel
 % values above 255 is replaced with values of 255 (saturation).
-% 
-%% SYNTAX
-% I_corr=rgb_correction(I,ref,type,thresh,flag)
 % 
 %% INPUT VARIABLES
 % 
@@ -59,6 +59,7 @@ end
 % convert I and ref to double
 I=double(I);
 ref=double(ref);
+dc=[{'r channel'} {'g channel'} {'b channel'}];
 switch type
     case 'simple'
         %calibrate pixels to a white region by rescaling the pixels to
@@ -76,7 +77,9 @@ switch type
             if flag==1
                 ii=find(I_corr(:)>255);
                 I_corr(ii)=255;
-                disp(['# of saturated pixels detected: ',num2str(length(ii))]);
+                disp(['# of saturated pixels detected (',dc{dum},...
+                    '): ',num2str(length(ii))]);
             end
         end
+        disp(' ');
 end

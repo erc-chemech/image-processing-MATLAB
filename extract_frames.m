@@ -9,7 +9,7 @@ function mov=extract_frames(filename,frames,varargin)
 % mov=extract_frames(filename,frames,time_interval)
 %% INPUT VARIABLES
 % filename: name of video file (RGB file)
-% frames: frame idices that will be extracted from the video file (single
+% frames: frame indices that will be extracted from the video file (single
 % row or col array containing integers or of type uint64).
 %   -If user inputs the string 'all' for the frame_range value, the
 %   function will import all of the frames from the video file.
@@ -51,7 +51,7 @@ elseif strcmp(frames,'time interval')==1&&ischar(frames)==1
                 disp(['Extracting frames from time ',num2str(time_interval(1)),...
                     ' to ',num2str(time_interval(2)),'.']);
                 disp(['Data is extracted every ',num2str(time_interval(3)),...
-                    ' frames.']);
+                    ' frame(s).']);
             else
                 disp('Frame import aborted!');
                 error(['''time_interval'' is not recognized to be a',...
