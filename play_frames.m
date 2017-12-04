@@ -34,6 +34,7 @@ end
 handles=guidata(figure(100));
 handles.f1.f=gcf;clf(handles.f1.f);
 handles.f1.s1=axes;
+handles.virgin_flag=1;
 
 %Show each frame
 for dum=1:size(mov,2)    
@@ -64,6 +65,8 @@ handles.go=uicontrol('style','edit','units','normalized',...
     'callback',@go_callback,'string',mov(dum).abs_frame_index);
 handles.mov=mov;%store mov var structure into the handles structure
 handles.current=mov(dum).abs_frame_index;%store the current frame number
+handles.xlim0=handles.f1.s1.XLim;
+handles.ylim0=handles.f1.s1.YLim;
 guidata(handles.f1.f,handles);%create handles structure for the figure window
 
 % This is the callback fcn for handles.prev pushbutton
@@ -74,17 +77,32 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
             disp('Cannot go back!');
             return
         end
+        
+        % get the xlim and ylim values
+        xlim0=handles.f1.s1.XLim;
+        ylim0=handles.f1.s1.YLim;
+        
         cla(handles.f1.s1);
         abs_frame_index=[handles.mov(:).abs_frame_index];%abs frame index
         ii=find(abs_frame_index==handles.current);
         handles.current=abs_frame_index(ii-1);%go back one frame        
         
-        imagesc(handles.f1.s1,handles.mov(ii-1).CData);%show frame
-        axis image;
+        %show frame
+        imagesc(handles.f1.s1,handles.mov(ii-1).CData);        
+        
+        % set the xlim and ylim to original values
+        if handles.virgin_flag==0
+            axis image;
+            set(handles.f1.s1,'xlim',xlim0,'ylim',ylim0);
+        else
+            axis image;
+        end
+
         title(handles.f1.s1,['Frame (abs): ',num2str(abs_frame_index(ii-1)),'/',num2str(abs_frame_index(end)),...
         ', Timestamp: ',num2str(handles.mov(ii-1).CurrentTime)]);
         drawnow;
         handles.go.String=handles.current;
+        handles.virgin_flag=0;
         guidata(handles.f1.f,handles);%update the handles structure
     
 
@@ -96,18 +114,32 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
             disp('Cannot go forward!');
             return
         end
+        
+        % get the xlim and ylim values
+        xlim0=handles.f1.s1.XLim;
+        ylim0=handles.f1.s1.YLim;
+        
         cla(handles.f1.s1);
         abs_frame_index=[handles.mov(:).abs_frame_index];%abs frame index
         ii=find(abs_frame_index==handles.current);
-        handles.current=abs_frame_index(ii+1);%go forward one frame
+        handles.current=abs_frame_index(ii+1);%go forward one frame        
+
+        %show frame
+        imagesc(handles.f1.s1,handles.mov(ii+1).CData);        
         
+        % set the xlim and ylim to original values
+        if handles.virgin_flag==0
+            axis image;
+            set(handles.f1.s1,'xlim',xlim0,'ylim',ylim0);
+        else
+            axis image;
+        end
         
-        imagesc(handles.f1.s1,handles.mov(ii+1).CData);%show frame
-        axis image;
         title(handles.f1.s1,['Frame (abs): ',num2str(abs_frame_index(ii+1)),'/',num2str(abs_frame_index(end)),...
         ', Timestamp: ',num2str(handles.mov(ii+1).CurrentTime)]);
         drawnow;
         handles.go.String=handles.current;
+        handles.virgin_flag=0;
         guidata(handles.f1.f,handles);%update the handles structure
     
 
@@ -120,15 +152,30 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
             disp('Frame # outside of frame range!');
             return
         end
+        
+        % get the xlim and ylim values
+        xlim0=handles.f1.s1.XLim;
+        ylim0=handles.f1.s1.YLim;
+        
         cla(handles.f1.s1);
         abs_frame_index=[handles.mov(:).abs_frame_index];%abs frame index
         handles.current=n;%update current frame
         
-        ii=find(abs_frame_index==handles.current);
-        imagesc(handles.f1.s1,handles.mov(ii).CData);%show frame
-        axis image;
+        %show frame
+        ii=find(abs_frame_index==handles.current);%locate frame index
+        imagesc(handles.f1.s1,handles.mov(ii).CData);        
+        
+        % set the xlim and ylim to original values
+        if handles.virgin_flag==0
+            axis image;
+            set(handles.f1.s1,'xlim',xlim0,'ylim',ylim0);
+        else
+            axis image;
+        end
+        
         title(handles.f1.s1,['Frame (abs): ',num2str(abs_frame_index(ii)),'/',num2str(abs_frame_index(end)),...
         ', Timestamp: ',num2str(handles.mov(ii).CurrentTime)]);
         drawnow;
+        handles.virgin_flag=0;
         guidata(handles.f1.f,handles);%update the handles structure
     

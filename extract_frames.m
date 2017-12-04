@@ -6,26 +6,62 @@ function mov=extract_frames(filename,frames,varargin)
 %
 %% SYNTAX
 % mov=extract_frames(filename,frames)
-% mov=extract_frames(filename,frames,time_interval)
+% mov=extract_frames(filename,'time interval',time_interval)
+% mov=extract_frames(filename,frames,'ROI',ROI)
 %% INPUT VARIABLES
+% 
+% mov=extract_frames(filename,frames)
+% 
 % filename: name of video file (RGB file)
+% 
 % frames: frame indices that will be extracted from the video file (single
 % row or col array containing integers or of type uint64).
+% 
 %   -If user inputs the string 'all' for the frame_range value, the
 %   function will import all of the frames from the video file.
-%   -If user inputs the string 'time interval, this function will extract
-%   frames between a designated time interval, described by the variable
-%   time_interval.
+% 
+% 
+% 
+% mov=extract_frames(filename,'time interval',time_interval)
+% 
+% filename: name of video file (RGB file)
+% 
 % time_interval: a 3 element double array describing the time interval for
 % extracting frames. 
+% 
 %       time_interval(1): The first element is the start time
+% 
 %       time_interval(2): The second element is the end time.
+% 
 %       time_interval(3): The third element describes the frame period in
 %       which to extract a frame. For example:
+% 
 %               if time_interval(3)=1, then collect every frame within the
 %               time interval
 %               if time_interval(3)=5, then collect every 5 frames within
 %               the time interval
+% 
+% 
+% 
+% mov=extract_frames(filename,frames,'ROI',ROI)
+% 
+% filename: name of video file (RGB file)
+% 
+% frames: frame indices that will be extracted from the video file (single
+% row or col array containing integers or of type uint64).
+% 
+%   -If user inputs the string 'all' for the frame_range value, the
+%   function will import all of the frames from the video file.
+% 
+% ROI: a 4 element double array representing a region of interest (ROI)
+% 
+%       ROI(1): left boundary
+% 
+%       ROI(2): right boundary
+% 
+%       ROI(3): bottom boundary
+% 
+%       ROI(4): top boundary
 % 
 %% OUTPUT VARIABLES
 % mov: a structure variable containing the extracted frames
@@ -37,32 +73,54 @@ function mov=extract_frames(filename,frames,varargin)
 % Turn off hardware acceleration to prevent VideoReader from crashing (an
 % apparant graphics card issue that crashes MATLAB)
 
-% Check to see if user inputs 'all' for abs_frame_index
-if strcmp(frames,'all')==1&&ischar(frames)==1
-    disp('This fcn will attempt to import all frames.');
-elseif strcmp(frames,'time interval')==1&&ischar(frames)==1
-    switch nargin
-        case 2
-            error('No specified time interval detected!');
-        case 3
-            %check that the user properly input time interval
-            if isa(varargin{1},'double')&&length(varargin{1})==3
-                time_interval=[sort(varargin{1}(1:2)) varargin{1}(3)];%time interval
-                disp(['Extracting frames from time ',num2str(time_interval(1)),...
-                    ' to ',num2str(time_interval(2)),'.']);
-                disp(['Data is extracted every ',num2str(time_interval(3)),...
-                    ' frame(s).']);
-            else
+% Specify default variable values
+flag_ROI=0;
+
+switch nargin
+    case 1 %not enough inputs
+        disp('Frame import aborted!');
+        error('Not enough arguments!');
+    case 2 %user specified frame variable
+        if strcmp(frames,'all')==1&&ischar(frames)==1
+            disp('This fcn will attempt to import all frames.');
+        elseif (strcmp(frames,'all')==0||strcmp(frames,'time interval')==0)&&...
+            ischar(frames)==1
+        disp('Frame import aborted!');
+        error(['Did not recognize char input for input var ''frames''. ',...
+            '\n''frames'' appears to be a %s'],class(frames));
+        end
+    case 3
+        if strcmp(frames,'time interval')==1&&ischar(frames)==1
+               %check that the user properly input time interval
+                if isa(varargin{1},'double')&&length(varargin{1})==3
+                    %time interval
+                    time_interval=[sort(varargin{1}(1:2)) varargin{1}(3)];
+                    disp(['Extracting frames from time ',num2str(time_interval(1)),...
+                        ' to ',num2str(time_interval(2)),'.']);
+                    disp(['Data is extracted every ',num2str(time_interval(3)),...
+                        ' frame(s).']);
+                else
+                    disp('Frame import aborted!');
+                    error(['''time_interval'' is not recognized to be a',...
+                        '2 element double array']);
+                end  
+        end
+    case 4
+        if strcmp(varargin{1},'ROI')==1
+            ROI=varargin{2};
+            % Check to see if the elements have been define properly
+            if ROI(2)<ROI(1)||ROI(4)<ROI(3)
                 disp('Frame import aborted!');
-                error(['''time_interval'' is not recognized to be a',...
-                    '2 element double array']);
+                error(['ROI varargin not defined properly!',...
+                    newline,'Make sure that ROI(2)>ROI(1) and',...
+                    'ROI(4)>ROI(3)']);
             end
-    end
-elseif (strcmp(frames,'all')==0||strcmp(frames,'time interval')==0)&&...
-        ischar(frames)==1
-    disp('Frame import aborted!');
-    error(['Did not recognize char input for input var ''frames''. ',...
-        '\n''frames'' appears to be a %s'],class(frames));        
+            flag_ROI=1;
+            disp('ROI detected and imported!');
+        else
+            disp('Frame import aborted!');
+            error('Unknown varargin (fcn syntax incorrect).');
+        end  
 end
 
 % Check to see if the frames array contains integers
@@ -87,7 +145,7 @@ Vidobj = VideoReader(filename);
 matlab.video.read.UseHardwareAcceleration('on')
 
 % Import frames from video into mov struct variable
-mov = struct('CData',zeros(Vidobj.Height,Vidobj.Width,3,2,'uint8'),...
+mov = struct('CData',zeros(Vidobj.Height,Vidobj.Width,3,1,'uint8'),...
     'abs_frame_index',[],'CurrentTime',[]);
 mov(5000).CData=[];%preallocate structure array
 
@@ -133,6 +191,12 @@ while hasFrame(Vidobj)
     
     if flag==1%if flag is 1, extract frame
         mov(k).CData=readFrame(Vidobj);%store the frame
+        
+        % Check if the user specified a ROI
+        if flag_ROI==1        
+            mov(k).CData=mov(k).CData(ROI(1):ROI(2),ROI(3):ROI(4),:);
+        end
+        
         mov(k).abs_frame_index=n;%store the absolute frame index
         mov(k).CurrentTime=Vidobj.CurrentTime;%store associated timepoint
         if mod(k,100)==0%update user every 100 frames are read
@@ -144,16 +208,20 @@ while hasFrame(Vidobj)
         readFrame(Vidobj);%need this to advance to the next frame
     end
     
+    
+    
     % Warn the user if the number of extracted frames exceed 500
-    if k>500&&mod(k,100)==0
+    if mod(k,100)==0&&k>500
         [user,~] = memory;
-        warning([newline,'MemAvailableAllArrays: ',...
-            num2str(user.MemAvailableAllArrays./1e6),'MB',newline,...
-            'MemUsedMATLAB: ',num2str(user.MemUsedMATLAB./1e6),'MB',newline,...
-            'Number of frames extracted is over 500. '...
-            'MATLAB can crash if memory usage is too high!',newline,...
-            'Use Crtl+c in the command window to terminate!']);
-        pause(2);
+        if user.MemAvailableAllArrays./1e6<3000
+            warning([newline,'MemAvailableAllArrays: ',...
+                num2str(user.MemAvailableAllArrays./1e6),'MB',newline,...
+                'MemUsedMATLAB: ',num2str(user.MemUsedMATLAB./1e6),'MB',newline,...
+                'Number of frames extracted is over 500. '...
+                'MATLAB can crash if memory usage is too high!',newline,...
+                'Use Crtl+c in the command window to terminate!']);
+            pause(2);
+        end
     end
     n=n+1;
 end
@@ -163,3 +231,7 @@ mov=mov(1:k-1);
 
 disp('Import success');
 disp(['Imported ',num2str(k-1),' frame(s)']);
+[user,~] = memory;
+disp([newline,'MemAvailableAllArrays: ',...
+    num2str(user.MemAvailableAllArrays./1e6),'MB',newline,...
+    'MemUsedMATLAB: ',num2str(user.MemUsedMATLAB./1e6),'MB']);
