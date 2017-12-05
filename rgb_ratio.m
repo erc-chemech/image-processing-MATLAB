@@ -1,12 +1,15 @@
 function [R_ratio,G_ratio,B_ratio]=rgb_ratio(rgb_I)
 % Author: Joshua Yeh
 % Date created: 2017/10/31
-% 
+%
 %% DESCRIPTION
 % This function accepts an rgb image and computes the rgb ratios based on
 % Grassman's Law from colorimetry. The image is deconstructed into
 % normalized red, green, and blue images.
 %
+%% SYNTAX
+% [R_ratio,G_ratio,B_ratio]=rgb_ratio(rgb_I)
+% 
 %% INPUT VARIABLES
 % rgb_I: 2d rgb image that will be deconstructed into the normalized red,
 % green, and blue channels (Grassman's Law). It is assumed that:

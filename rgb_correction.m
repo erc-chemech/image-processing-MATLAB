@@ -3,6 +3,9 @@ function I_corr=rgb_correction(I,ref,varargin)
 % Date created: 2017/11/01
 % 
 %% SYNTAX
+% I_corr=rgb_correction(I,ref);
+% I_corr=rgb_correction(I,ref,type);
+% I_corr=rgb_correction(I,ref,type,thresh);
 % I_corr=rgb_correction(I,ref,type,thresh,flag)
 % 
 %% DESCRIPTION
@@ -22,13 +25,22 @@ function I_corr=rgb_correction(I,ref,varargin)
 % 
 % I: a 2D RGB image that will be color-corrected to a reference white
 % background (double)
+% 
+% 
 % ref: a reference (sub) image representing the white reference standard
 % (double)
+% 
+% 
 % type (optional): defines the type of rgb correction to be performed
+% 
 %   -'simple': A simple color correction by using a reference white area
 %   and assuming that r=b=g
+% 
+% 
 % thresh (optional): threshold values in which the pixels values will be corrected to
 % (default is 250)
+% 
+% 
 % flag (optional): a flag that tells the program to replace values >255 with 255
 % (saturation) when flag=1 (default flag is 1)
 %

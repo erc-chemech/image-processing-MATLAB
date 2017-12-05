@@ -8,6 +8,7 @@ function mov=extract_frames(filename,frames,varargin)
 % mov=extract_frames(filename,frames)
 % mov=extract_frames(filename,'time interval',time_interval)
 % mov=extract_frames(filename,frames,'ROI',ROI)
+% mov=extract_frames(filename,'time interval',time_interval,'ROI',ROI)
 %% INPUT VARIABLES
 % 
 % mov=extract_frames(filename,frames)
@@ -89,7 +90,7 @@ switch nargin
         error(['Did not recognize char input for input var ''frames''. ',...
             '\n''frames'' appears to be a %s'],class(frames));
         end
-    case 3
+    case 3 %user specified time interval to import frames
         if strcmp(frames,'time interval')==1&&ischar(frames)==1
                %check that the user properly input time interval
                 if isa(varargin{1},'double')&&length(varargin{1})==3
@@ -105,7 +106,7 @@ switch nargin
                         '2 element double array']);
                 end  
         end
-    case 4
+    case 4 %user specified frame range and ROI
         if strcmp(varargin{1},'ROI')==1
             ROI=varargin{2};
             % Check to see if the elements have been define properly
@@ -116,11 +117,42 @@ switch nargin
                     'ROI(4)>ROI(3)']);
             end
             flag_ROI=1;
-            disp('ROI detected and imported!');
+            disp('ROI detected!');
         else
             disp('Frame import aborted!');
             error('Unknown varargin (fcn syntax incorrect).');
-        end  
+        end
+    case 5 %user specified time itnerval and ROI
+        if strcmp(frames,'time interval')==1&&ischar(frames)==1
+               %check that the user properly input time interval
+                if isa(varargin{1},'double')&&length(varargin{1})==3
+                    %time interval
+                    time_interval=[sort(varargin{1}(1:2)) varargin{1}(3)];
+                    disp(['Extracting frames from time ',num2str(time_interval(1)),...
+                        ' to ',num2str(time_interval(2)),'.']);
+                    disp(['Data is extracted every ',num2str(time_interval(3)),...
+                        ' frame(s).']);
+                else
+                    disp('Frame import aborted!');
+                    error(['''time_interval'' is not recognized to be a',...
+                        '2 element double array']);
+                end  
+        end
+        if strcmp(varargin{2},'ROI')==1
+            ROI=varargin{3};
+            % Check to see if the elements have been define properly
+            if ROI(2)<ROI(1)||ROI(4)<ROI(3)
+                disp('Frame import aborted!');
+                error(['ROI varargin not defined properly!',...
+                    newline,'Make sure that ROI(2)>ROI(1) and',...
+                    'ROI(4)>ROI(3)']);
+            end
+            flag_ROI=1;
+            disp('ROI detected!');
+        else
+            disp('Frame import aborted!');
+            error('Unknown varargin (fcn syntax incorrect).');
+        end
 end
 
 % Check to see if the frames array contains integers
@@ -170,7 +202,7 @@ while hasFrame(Vidobj)
         
     %If user specifies to import frames within a specified time interval
     elseif ischar(frames)==1&&strcmp(frames,'time interval')
-        if Vidobj.CurrentTime>time_interval(1)&&...
+        if Vidobj.CurrentTime>=time_interval(1)&&...
                 Vidobj.CurrentTime<time_interval(2)
             if mod(kk,time_interval(3))==1||time_interval(3)==1
                 flag=1;
@@ -203,17 +235,29 @@ while hasFrame(Vidobj)
             disp([num2str(k),' frames imported.']);
             disp(['Current frame time: ',num2str(Vidobj.CurrentTime)]);
         end
-        k=k+1;
-    else
-        readFrame(Vidobj);%need this to advance to the next frame
+        if k>1%this is to prevent duplicate frames being saved
+            if isequal(mov(k).CData,mov(k-1).CData)==0
+                k=k+1;
+            else                
+            end
+        else
+            k=k+1;
+        end        
+    else%otherwise advance to the next frame
+        readFrame(Vidobj);
+        if mod(n,100)==0%update user every 100s on movie timeline
+            disp(['Played through ',num2str(n),' frames']);
+            disp(['Current frame time: ',num2str(Vidobj.CurrentTime)]);
+        end
     end
     
     
     
     % Warn the user if the number of extracted frames exceed 500
     if mod(k,100)==0&&k>500
-        [user,~] = memory;
-        if user.MemAvailableAllArrays./1e6<3000
+        [user,~] = memory;%get memory
+        if user.MemAvailableAllArrays/1e6<3000
+            % display warning and memory stats
             warning([newline,'MemAvailableAllArrays: ',...
                 num2str(user.MemAvailableAllArrays./1e6),'MB',newline,...
                 'MemUsedMATLAB: ',num2str(user.MemUsedMATLAB./1e6),'MB',newline,...
@@ -229,7 +273,7 @@ end
 % Remove empty unused preallocated entries
 mov=mov(1:k-1);
 
-disp('Import success');
+disp('Import successful');
 disp(['Imported ',num2str(k-1),' frame(s)']);
 [user,~] = memory;
 disp([newline,'MemAvailableAllArrays: ',...
