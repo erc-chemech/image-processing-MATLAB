@@ -231,12 +231,13 @@ while hasFrame(Vidobj)
         
         mov(k).abs_frame_index=n;%store the absolute frame index
         mov(k).CurrentTime=Vidobj.CurrentTime;%store associated timepoint
-        if mod(k,100)==0%update user every 100 frames are read
-            disp([num2str(k),' frames imported.']);
-            disp(['Current frame time: ',num2str(Vidobj.CurrentTime)]);
-        end
+        
         if k>1%this is to prevent duplicate frames being saved
             if isequal(mov(k).CData,mov(k-1).CData)==0
+                if mod(k,100)==0%update user every 100 frames are read
+                    disp([num2str(k),' frames imported.']);
+                    disp(['Current frame time: ',num2str(Vidobj.CurrentTime)]);
+                end
                 k=k+1;
             else                
             end
@@ -279,3 +280,4 @@ disp(['Imported ',num2str(k-1),' frame(s)']);
 disp([newline,'MemAvailableAllArrays: ',...
     num2str(user.MemAvailableAllArrays./1e6),'MB',newline,...
     'MemUsedMATLAB: ',num2str(user.MemUsedMATLAB./1e6),'MB']);
+disp(' ');

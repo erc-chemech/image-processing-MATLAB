@@ -12,6 +12,7 @@ function I_corr=rgb_correction(I,ref,varargin)
 % This function performs an RGB correction to an rgb image, I, in reference
 % to a white background. The input images should have values between 0 and
 % 255.
+% 
 % NOTE on 'simple' algorithm: Since the correction is based on a scaling
 % factor determined by the mean of the pixels values of the white standard
 % image, there will be a distribution of pixels values centerd at 255, when
