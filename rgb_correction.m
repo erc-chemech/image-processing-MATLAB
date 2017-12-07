@@ -72,7 +72,8 @@ end
 % convert I and ref to double
 I=double(I);
 ref=double(ref);
-dc=[{'r channel'} {'g channel'} {'b channel'}];
+dc=[{'R'} {'G'} {'B'}];
+flag_D=0;
 switch type
     case 'simple'
         %calibrate pixels to a white region by rescaling the pixels to
@@ -90,9 +91,15 @@ switch type
             if flag==1
                 ii=find(I_corr(:)>255);
                 I_corr(ii)=255;
-                disp(['# of saturated pixels detected (',dc{dum},...
-                    '): ',num2str(length(ii))]);
+                if isempty(ii)==0
+                    disp(['# of saturated pixels (',dc{dum},...
+                        '): ',num2str(length(ii)),', mu: ',...
+                        num2str(pd.mu)]);
+                    flag_D=1;
+                end
             end
         end
-        disp(' ');
+        if flag_D==1
+            disp(' ')
+        end
 end
