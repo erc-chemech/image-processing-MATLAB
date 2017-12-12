@@ -75,6 +75,7 @@ function mov=extract_frames(filename,frames,varargin)
 % apparant graphics card issue that crashes MATLAB)
 
 % Specify default variable values
+
 flag_ROI=0;
 
 switch nargin
@@ -251,8 +252,6 @@ while hasFrame(Vidobj)
             disp(['Current frame time: ',num2str(Vidobj.CurrentTime)]);
         end
     end
-    
-    
     
     % Warn the user if the number of extracted frames exceed 500
     if mod(k,100)==0&&k>500

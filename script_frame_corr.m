@@ -134,7 +134,8 @@ for fn=double(frames)
         case 3%blue channel
             channel4=rm_lower_bins(channel3,thresh,0);
     end
-    channel5=(channel4-thresh)+1/3;
+%     channel5=(channel4-thresh)+1/3;
+    channel5=channel4;
     channel5(1:5,:)=nan;
     channel5(end-4:end,:)=nan;
     channel5(:,1:5)=nan;
