@@ -1,4 +1,4 @@
-function output=import_tiff_stack(file)
+function output=import_tiff_stack(file,varargin)
 %% DESCRIPTION
 % This function imports a stacked tiff file and stores in an ouput variable
 % structure.
@@ -11,19 +11,25 @@ function output=import_tiff_stack(file)
 %   intensity through the thickness of the stack
 % 
 %%
+switch nargin
+    case 1
+        r=10;
+    case 2
+        r=varargin{1};
+end
 
 disp(['Importing ',file]);
 tiff_info=imfinfo(file);%tiff info
 disp(['Detected ',num2str(size(tiff_info,1)),' page(s) in tiff file']);
 tiff_stack=imread(file,1);%read first image in the stack
-tiff_stack=double(medfilt2(tiff_stack,[10 10]));% remove noise using medium filter
+tiff_stack=double(medfilt2(tiff_stack,[r r]));% remove noise using medium filter
 I_sum_z=sum(tiff_stack(:));% integrate intensity for first image plane
 tiff_stack_std=std(tiff_stack(:));%determine std for each plane
 tiff_stack_mean=mean(tiff_stack(:));%determine mean for each plane
 
 %extract and apply median filter to each image in stack and concatenate
 for dum=2:size(tiff_info,1)    
-    plane=double(medfilt2(imread(file,dum),[10 10]));
+    plane=double(medfilt2(imread(file,dum),[r r]));
     tiff_stack=cat(3,tiff_stack,plane);
     I_sum_z=cat(1,I_sum_z,sum(plane(:)));%integrate intensity for image plane
     tiff_stack_std=cat(1,tiff_stack_std,std(plane(:)));%det. std for each plane
