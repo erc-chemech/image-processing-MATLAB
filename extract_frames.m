@@ -56,13 +56,13 @@ function mov=extract_frames(filename,frames,varargin)
 % 
 % ROI: a 4 element double array representing a region of interest (ROI)
 % 
-%       ROI(1): left boundary
+%       ROI(1): bottom boundary
 % 
-%       ROI(2): right boundary
+%       ROI(2): top boundary
 % 
-%       ROI(3): bottom boundary
+%       ROI(3): left boundary
 % 
-%       ROI(4): top boundary
+%       ROI(4): right boundary
 % 
 %% OUTPUT VARIABLES
 % mov: a structure variable containing the extracted frames

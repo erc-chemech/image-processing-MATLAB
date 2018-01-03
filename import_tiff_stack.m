@@ -1,10 +1,13 @@
 function output=import_tiff_stack(file,varargin)
 %% DESCRIPTION
 % This function imports a stacked tiff file and stores in an ouput variable
-% structure.
+% structure. This function only supports greyscale or binary images!
 %
 %% INPUT VARIABLES
 % file: names of the tiff file to be imported
+% 
+% r (varargin{1}): the pixe side length of the square area in which a
+% medfilt2 will be applied (default is r=10)
 % 
 %% OUTPUT VARIABLES
 % output: structure variable contain the raw image file and integrated
@@ -22,7 +25,7 @@ disp(['Importing ',file]);
 tiff_info=imfinfo(file);%tiff info
 disp(['Detected ',num2str(size(tiff_info,1)),' page(s) in tiff file']);
 tiff_stack=imread(file,1);%read first image in the stack
-tiff_stack=double(medfilt2(tiff_stack,[r r]));% remove noise using medium filter
+tiff_stack=medfilt2(double(tiff_stack),[r r]);% remove noise using medium filter
 I_sum_z=sum(tiff_stack(:));% integrate intensity for first image plane
 tiff_stack_std=std(tiff_stack(:));%determine std for each plane
 tiff_stack_mean=mean(tiff_stack(:));%determine mean for each plane
