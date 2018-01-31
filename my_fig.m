@@ -39,12 +39,12 @@ params.CaseSensitive=false;
 params.addParameter('gap',0.11,@(x) isnumeric(x));
 params.addParameter('fontsize',18,@(x) isnumeric(x));
 df=0;%flag for whether figure is a double axes plot
-% if only 1
+% if only 1 axes is inputed
 if (numel(ax)==1&&isequal(ax{1},[1 1 1]))
     params.addParameter('marg_h',[0.2 0.05],@(x) length(x)==2&&isnumeric(x));
     params.addParameter('marg_w',[0.15 0.05],@(x) length(x)==2&&isnumeric(x));
 
-% or double axes
+% or double axes (2 axes stacked ontop of each other)
 elseif (numel(ax)==2&&isequal(ax{1},[1 1 1]))&&isequal(ax{2},[1 1 1])
     params.addParameter('marg_h',[0.22 0.05],@(x) length(x)==2&&isnumeric(x));
     params.addParameter('marg_w',[0.17 0.17],@(x) length(x)==2&&isnumeric(x));
