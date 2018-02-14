@@ -20,7 +20,8 @@ function play_frames(mov,varargin)
 % flag: a flag variables that determines whether to play through the frames
 % when the function is running (1 = play, 0 = don't play).
 %%
-% Figure out the number of inputs
+% Parse input variables
+
 switch nargin
     case 1
         pause_time=0;

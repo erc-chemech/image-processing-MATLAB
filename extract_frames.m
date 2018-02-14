@@ -74,7 +74,9 @@ function mov=extract_frames(filename,frames,varargin)
 % Turn off hardware acceleration to prevent VideoReader from crashing (an
 % apparant graphics card issue that crashes MATLAB)
 
-% Specify default variable values
+% Parse input variables
+
+narginchk(2,inf);
 
 flag_ROI=0;
 
@@ -123,7 +125,7 @@ switch nargin
             disp('Frame import aborted!');
             error('Unknown varargin (fcn syntax incorrect).');
         end
-    case 5 %user specified time itnerval and ROI
+    case 5 %user specified time interval and ROI
         if strcmp(frames,'time interval')==1&&ischar(frames)==1
                %check that the user properly input time interval
                 if isa(varargin{1},'double')&&length(varargin{1})==3
