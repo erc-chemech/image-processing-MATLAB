@@ -21,8 +21,8 @@ function f1=Argolight(I1,test_I,varargin)
 % 'T': threshold value for binarizing image (for identification of grid
 % points) (default is T=100)
 % 
-% 'span': span used for lowess surface fitting procedure for inhomogeneous
-% illumination
+% 'span': span used for lowess or loess surface fitting procedure for
+% inhomogeneous illumination
 % 
 % 'pt_window': the pixel distance from the centroid of a detected grid
 % point, it is used to determine the appropriate itensity value assigned to
@@ -36,6 +36,16 @@ function f1=Argolight(I1,test_I,varargin)
         % intensity levels > 10 ADU (analogue to digital units)
 % 
 % 'clim': the color map span for the inhomo. illumination surface plot
+% 
+% 'fit_I': the type of fitting for inhomo. illum. surfac fitting
+        % 'lowess' applies a quadratic loess fitting (default)
+        % 'loess' applies a linear loess fitting
+        % 'bihanrmonicinterp' applies a biharmonic surface interpolation
+        % 'thinplateinterp' applies a thin plate interpolation
+%         
+% 'filter_outlier': option to remove outliers, as detected by isoutlier fcn
+        % true (default)
+        % false
 
 %% OUTPUT VARIABLES
 % f1: structure variables containing the foloowing fieldnames:
@@ -78,6 +88,8 @@ params.addParameter('pt_window',4,@(x) isnumeric(x));
 params.addParameter('clim',[0 1],@(x) isnumeric(x)==1&numel(x)==2);
 params.addParameter('dot_I','averaged',@(x) ischar(x)==1);
 params.addParameter('image_gain',2,@(x) isnumeric(x)&numel(x)==1);
+params.addParameter('fit_I','lowess',@(x) ischar(x)==1);
+params.addParameter('filter_outlier',true,@(X) islogical(x));
 params.parse(varargin{:});
 
 % Extract out values from parsed input
@@ -85,6 +97,8 @@ pt_window=params.Results.pt_window;
 clim=params.Results.clim;
 dot_I=params.Results.dot_I;
 image_gain=params.Results.image_gain;
+fit_I=params.Results.fit_I;
+filter_outlier=params.Results.filter_outlier;
 
 % extract offset associated with image gain (defaut is 2)
 % Dark offset values obtained from dark images. Indices corresponds to
@@ -301,15 +315,33 @@ disp('CF analysis complete');
 % Use this to perform loess surface fitting (local weighted quadratic
 % fitting)
 disp('Performing surface fit of intensity 3d scatter data');
-ft = fittype( 'lowess' );
-opts = fitoptions( 'Method', 'LowessFit',...
-    'normalize','on','robust','bisquare','span',params.Results.span);
 
-% % Determine what intensity value to normalize the intensities by (take
-% % median of top 10 intensity values
-% ii2=sort(ii1(:,3),'descend');
+switch fit_I
+    case 'lowess'
+        ft = fittype( 'lowess' );
+        opts = fitoptions( 'Method', 'LowessFit',...
+            'normalize','on','robust','bisquare','span',params.Results.span);
+    case 'loess'
+        ft = fittype( 'loess' );
+        opts = fitoptions( 'Method', 'LowessFit',...
+            'normalize','on','robust','bisquare','span',params.Results.span);
+    case 'biharmonicinterp'
+        ft = fittype( 'biharmonicinterp' );
+        opts = fitoptions( 'Method', 'biharmonicinterp',...
+            'normalize','on');
+    case 'thinplateinterp'
+        ft = fittype( 'biharmonicinterp' );
+        opts = fitoptions( 'Method', 'biharmonicinterp',...
+            'normalize','on');
+end
 
-[sfIH, gof] = fit( [ii1(:,1), ii1(:,2)], ii1(:,3)./max(ii1(:,3)), ft, opts );
+% exclude outlier
+if filter_outlier==true
+    eo=isoutlier(ii1(:,3)./max(ii1(:,3)));
+    eo=find(eo==0);
+end
+
+[sfIH, gof] = fit( [ii1(eo,1), ii1(eo,2)], ii1(eo,3)./max(ii1(eo,3)), ft, opts );
 [inhomo_x,inhomo_y]=meshgrid(1:size(I1.tiff_stack,2),...
     1:size(I1.tiff_stack,1));
 
@@ -330,7 +362,7 @@ disp('Performing y displacement surface fit');
 
 %% Prepare fitting procedure for CF linear line
 ft = fittype( 'poly1' );
-opts = fitoptions( 'Method', 'LinearLeastSquares' );
+opts = fitoptions( 'Method', 'LinearLeastSquares');
 [sfcf, gof] = fit( m_store, v_store,ft, opts );
 cf_coeff=coeffvalues(sfcf);
 
@@ -415,6 +447,8 @@ colormap(f1.s2,'gray');
 colormap(f1.s5,'gray');
 set(f1.s3,'yscale','log');
 set(f1.s4,'dataaspectratio',[1 1 0.001]);
+set(f1.s7,'dataaspectratio',[1 1 0.05]);
+set(f1.s6,'dataaspectratio',[1 1 0.05]);
 linkaxes([f1.s1 f1.s2],'xy');
 drawnow;
 disp('Plotting completed');
