@@ -42,6 +42,8 @@ if strcmp(type,'mean')
     out=accumarray([br ar],Z1(:),[numel(n2) numel(n1)],@(x) mean(x));
 elseif strcmp(type,'none')
     out=accumarray([br ar],Z1(:),[numel(n2) numel(n1)]);
+elseif strcmp(type,'squared')
+    out=accumarray([br ar],Z1(:),[numel(n2) numel(n1)],@(x) sum(x).^2);
 end
 
 % Create corresponding X and Y array associated withthe image array

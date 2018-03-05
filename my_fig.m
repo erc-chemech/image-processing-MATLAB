@@ -38,6 +38,7 @@ params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('gap',0.11,@(x) isnumeric(x));
 params.addParameter('fontsize',18,@(x) isnumeric(x));
+params.addParameter('fontname','Sofia Pro Light',@(x) ischar(x));
 df=0;%flag for whether figure is a double axes plot
 % if only 1 axes is inputed
 if (numel(ax)==1&&isequal(ax{1},[1 1 1]))
@@ -61,6 +62,7 @@ gap=params.Results.gap;%gap between subplots
 marg_h=params.Results.marg_h;%height margin used in subtightplot
 marg_w=params.Results.marg_w;%width margin used in subtightplot
 fontsize=params.Results.fontsize;%fontsize for all axes
+fontname=params.Results.fontname;
 
 % Define figure and store it in struct variable
 f.f=figure(n); clf(f.f);
@@ -75,7 +77,7 @@ for dum=1:length(ax)
     
     % Create subplot
     f.(fn)=subtightplot(ax{dum}(1),ax{dum}(2),ax{dum}(3:end),gap,marg_h,marg_w);
-    set(f.(fn),'nextplot','add','fontsize',fontsize);
+    set(f.(fn),'nextplot','add','fontsize',fontsize,'fontname',fontname);
     
 end
 

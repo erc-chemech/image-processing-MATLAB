@@ -44,6 +44,9 @@ function I_corr=rgb_correction(I,ref,varargin)
 % 
 % flag (optional): a flag that tells the program to replace values >255 with 255
 % (saturation) when flag=1 (default flag is 1)
+% 
+% silence (optional): a flag that tells the program to not display the
+% number of saturated pixels for each channel (default value is 1)
 %
 %% OUTPUT VARIABLES
 % I_corr: corrected rgb image on normalized rgb ratio (Grassman's Law)
@@ -54,19 +57,28 @@ switch nargin
     case 2
         type='simple';
         thresh=250;
-        flag=1;        
+        flag=1;
+        silence=1;
     case 3
         type=varargin{1};
         thresh=250;
-        flag=1;        
+        flag=1;
+        silence=1;
     case 4
         type=varargin{1};
         thresh=varargin{2};
         flag=1;
+        silence=1;
     case 5
         type=varargin{1};
         thresh=varargin{2};
         flag=varargin{3};
+        silence=1;
+    case 6
+        type=varargin{1};
+        thresh=varargin{2};
+        flag=varargin{3};
+        silence=varargin{4};
 end
 
 % convert I and ref to double
@@ -91,7 +103,7 @@ switch type
             if flag==1
                 ii=find(I_corr(:)>255);
                 I_corr(ii)=255;
-                if isempty(ii)==0
+                if isempty(ii)==0&&silence==0
                     disp(['# of saturated pixels (',dc{dum},...
                         '): ',num2str(length(ii)),', mu: ',...
                         num2str(pd.mu)]);

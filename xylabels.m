@@ -30,27 +30,21 @@ params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('fontweight','bold',@(x) ischar(x));
 params.addParameter('fontsize',ax.FontSize,@(x) isnumeric(x));
+params.addParameter('fontname','Sofia Pro Light',@(x) ischar(x));
 params.parse(varargin{:});
 
 % extracted parsed parameters
 fontweight=params.Results.fontweight;%fontweight of texts
 fontsize=params.Results.fontsize;%fontsize of texts
+fontname=params.Results.fontname;
 
 for dum=1:length(ax)
-    xh0=xlabel(ax(dum),xl,'fontsize',fontsize,'fontweight',fontweight);
-    yh0=ylabel(ax(dum),yl,'fontsize',fontsize,'fontweight',fontweight);
+    xh0=xlabel(ax(dum),xl,'fontsize',fontsize,'fontweight',fontweight,...
+        'fontname',fontname);
+    yh0=ylabel(ax(dum),yl,'fontsize',fontsize,'fontweight',fontweight,...
+        'fontname',fontname);
     set(xh0,'units','normalized');
     set(yh0,'units','normalized');
-    
-    % Need to work around bug in MATLAB saving, where the x and y labels
-    % properties are not preserved
-%     xh=copyobj(xh0,ax(dum));
-%     yh=copyobj(yh0,ax(dum));
-%     linkprop([xh ax(dum).XLabel],'position','fontsize');
-%     linkprop([yh ax(dum).YLabel],'position','fontsize');
-    
-%     xlabel(ax(dum),[]);
-%     ylabel(ax(dum),[]);
 end
 
 % define output
