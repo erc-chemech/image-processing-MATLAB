@@ -38,7 +38,7 @@ params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('gap',0.11,@(x) isnumeric(x));
 params.addParameter('fontsize',18,@(x) isnumeric(x));
-params.addParameter('fontname','Sofia Pro Light',@(x) ischar(x));
+params.addParameter('fontname','Microsoft YaHei Light',@(x) ischar(x));
 df=0;%flag for whether figure is a double axes plot
 % if only 1 axes is inputed
 if (numel(ax)==1&&isequal(ax{1},[1 1 1]))

@@ -30,7 +30,7 @@ params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('fontweight','bold',@(x) ischar(x));
 params.addParameter('fontsize',ax.FontSize,@(x) isnumeric(x));
-params.addParameter('fontname','Sofia Pro Light',@(x) ischar(x));
+params.addParameter('fontname','Microsoft YaHei Light',@(x) ischar(x));
 params.parse(varargin{:});
 
 % extracted parsed parameters
