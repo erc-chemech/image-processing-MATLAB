@@ -89,7 +89,7 @@ for fn=double(frames)
     k=find([mov.abs_frame_index]==fn);
     
     % Create a figure (rgb)
-    f1.f=figure(1); clf(figure(1));
+    f1.f=figure(99); clf(figure(99));
     f1.f.Color='w';
     f1.f.Name=['frame: ',num2str(fn)];
     gap=[0.04];%Define gap associated with subplot creation

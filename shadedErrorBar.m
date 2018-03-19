@@ -76,6 +76,7 @@ params.CaseSensitive = false;
 params.addParameter('lineProps', '-k', @(x) ischar(x) | iscell(x));
 params.addParameter('transparent', true, @(x) islogical(x) || x==0 || x==1);
 params.addParameter('patchSaturation', 0.2, @(x) isnumeric(x) && x>=0 && x<=1);
+params.addParameter('patchEdge',false,@(x) islogical(x) | x==1 | x==0);
 
 params.parse(varargin{:});
 
@@ -83,6 +84,7 @@ params.parse(varargin{:});
 lineProps =  params.Results.lineProps;
 transparent =  params.Results.transparent;
 patchSaturation = params.Results.patchSaturation;
+patchEdge=params.Results.patchEdge;
 
 if ~iscell(lineProps), lineProps={lineProps}; end
 
@@ -123,7 +125,7 @@ end
 initialHoldStatus=ishold;
 if ~initialHoldStatus, hold on,  end
 
-H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation);
+H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation,patchEdge);
 
 if ~initialHoldStatus, hold off, end
 
@@ -133,7 +135,8 @@ end
 
 
 
-function H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation)
+function H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation,...
+    patchEdge)
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Plot to get the parameters of the line
@@ -176,12 +179,15 @@ function H = makePlot(x,y,errBar,lineProps,transparent,patchSaturation)
     H.patch=patch(xP,yP,1,'facecolor',patchColor, ...
                   'edgecolor','none', ...
                   'facealpha',faceAlpha);
-
-
-    %Make pretty edges around the patch. 
-    H.edge(1)=plot(x,lE,'-','color',edgeColor);
-    H.edge(2)=plot(x,uE,'-','color',edgeColor);
-
+    
+    %Make pretty edges around the patch.
+    if patchEdge==true||patchEdge==1
+        H.edge(1)=plot(x,lE,'-','color',edgeColor);
+        H.edge(2)=plot(x,uE,'-','color',edgeColor);
+    else
+        H.edge(1)=plot(x,lE,'-','color','none');
+        H.edge(2)=plot(x,uE,'-','color','none');
+    end
 
 
     uistack(H.mainLine,'top') % Bring the main line to the top

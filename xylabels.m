@@ -28,21 +28,23 @@ end
 narginchk(3,inf);
 params=inputParser;
 params.CaseSensitive=false;
-params.addParameter('fontweight','bold',@(x) ischar(x));
+params.addParameter('fontweight','normal',@(x) ischar(x));
 params.addParameter('fontsize',ax.FontSize,@(x) isnumeric(x));
 params.addParameter('fontname','Microsoft YaHei Light',@(x) ischar(x));
+params.addParameter('interpreter','tex',@(x) strcmp(x,'tex')|strcmp(x,'latex'));
 params.parse(varargin{:});
 
 % extracted parsed parameters
 fontweight=params.Results.fontweight;%fontweight of texts
 fontsize=params.Results.fontsize;%fontsize of texts
-fontname=params.Results.fontname;
+fontname=params.Results.fontname;%fontname
+interpreter=params.Results.interpreter;%text interpreter
 
 for dum=1:length(ax)
     xh0=xlabel(ax(dum),xl,'fontsize',fontsize,'fontweight',fontweight,...
-        'fontname',fontname);
+        'fontname',fontname,'interpreter',interpreter);
     yh0=ylabel(ax(dum),yl,'fontsize',fontsize,'fontweight',fontweight,...
-        'fontname',fontname);
+        'fontname',fontname,'interpreter',interpreter);
     set(xh0,'units','normalized');
     set(yh0,'units','normalized');
 end
