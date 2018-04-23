@@ -43,7 +43,7 @@ df=0;%flag for whether figure is a double axes plot
 % if only 1 axes is inputed
 if (numel(ax)==1&&isequal(ax{1},[1 1 1]))
     params.addParameter('marg_h',[0.2 0.05],@(x) length(x)==2&&isnumeric(x));
-    params.addParameter('marg_w',[0.15 0.05],@(x) length(x)==2&&isnumeric(x));
+    params.addParameter('marg_w',[0.2 0.05],@(x) length(x)==2&&isnumeric(x));
 
 % or double axes (2 axes stacked ontop of each other)
 elseif (numel(ax)==2&&isequal(ax{1},[1 1 1]))&&isequal(ax{2},[1 1 1])
@@ -51,9 +51,9 @@ elseif (numel(ax)==2&&isequal(ax{1},[1 1 1]))&&isequal(ax{2},[1 1 1])
     params.addParameter('marg_w',[0.17 0.17],@(x) length(x)==2&&isnumeric(x));
     df=1;
     
-else%otherwise for multple axes
-    params.addParameter('marg_h',[0.1 0.1],@(x) length(x)==2&&isnumeric(x));
-    params.addParameter('marg_w',[0.1 0.1],@(x) length(x)==2&&isnumeric(x));
+else%otherwise for multiple axes
+    params.addParameter('marg_h',[0.2 0.1],@(x) length(x)==2&&isnumeric(x));
+    params.addParameter('marg_w',[0.15 0.05],@(x) length(x)==2&&isnumeric(x));
 end
 params.parse(varargin{:});
 
