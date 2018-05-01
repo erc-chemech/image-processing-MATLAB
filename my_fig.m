@@ -31,9 +31,15 @@ function f=my_fig(n,ax,varargin)
 %   f.s<axes number>: axes are numbered according to the order in which ax
 %   is defined
 %   f.f: handles to the figure
+%
+%% Parse input variables
+narginchk(1,inf);
 
-% Parse input variables
-narginchk(2,inf);
+% If user doesn't specify the value for ax
+if nargin==1
+    ax={[1 1 1]};
+end
+
 params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('gap',0.11,@(x) isnumeric(x));
@@ -56,6 +62,9 @@ else%otherwise for multiple axes
     params.addParameter('marg_w',[0.15 0.05],@(x) length(x)==2&&isnumeric(x));
 end
 params.parse(varargin{:});
+
+
+%% Create figure object
 
 % Extract values from input variables
 gap=params.Results.gap;%gap between subplots
