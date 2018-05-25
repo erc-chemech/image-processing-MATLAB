@@ -20,14 +20,14 @@ function out=my_color_gradient(color1,color2,n)
 if ischar(color1)
     color1=char2color(color1);%if it is a matlab char ('r','g','b',etc.)
 else
-    color1=color1./max(color1);% normalize colors
+%     color1=color1./max(color1);% normalize colors
 end
 
 % process the color2 variable
 if ischar(color2)
     color2=char2color(color2);%if it is a matlab char ('r','g','b',etc.)
 else
-    color2=color2./max(color2);% normalize colors
+%     color2=color2./max(color2);% normalize colors
 end
 
 % red channel

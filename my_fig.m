@@ -25,7 +25,7 @@ function f=my_fig(n,ax,varargin)
 %   'marg_w': margins in width in normalized units (ised in subtightplot
 %   fcn)
 %   'fontsize': fontsize for all axes
-% 
+%   'fontname': fontname for all axes
 %% OUTPUT VARIABLES
 % f: structure variables
 %   f.s<axes number>: axes are numbered according to the order in which ax
@@ -45,6 +45,7 @@ params.CaseSensitive=false;
 params.addParameter('gap',0.11,@(x) isnumeric(x));
 params.addParameter('fontsize',18,@(x) isnumeric(x));
 params.addParameter('fontname','Microsoft YaHei Light',@(x) ischar(x));
+params.addParameter('visible','on', @(x) strcmp(x,'on')|strcmp(x,'off'));
 df=0;%flag for whether figure is a double axes plot
 % if only 1 axes is inputed
 if (numel(ax)==1&&isequal(ax{1},[1 1 1]))
@@ -71,10 +72,15 @@ gap=params.Results.gap;%gap between subplots
 marg_h=params.Results.marg_h;%height margin used in subtightplot
 marg_w=params.Results.marg_w;%width margin used in subtightplot
 fontsize=params.Results.fontsize;%fontsize for all axes
-fontname=params.Results.fontname;
+fontname=params.Results.fontname;%fontname for all axes
+visible=params.Results.visible;%figure visibility
 
 % Define figure and store it in struct variable
-f.f=figure(n); clf(f.f);
+f.f=figure(n);clf(f.f);
+
+if strcmp(visible,'off')
+    f.f.Visible='off';
+end
 
 % Create subplots based on the ax input var
 for dum=1:length(ax)
@@ -86,14 +92,15 @@ for dum=1:length(ax)
     
     % Create subplot
     f.(fn)=subtightplot(ax{dum}(1),ax{dum}(2),ax{dum}(3:end),gap,marg_h,marg_w);
-    set(f.(fn),'nextplot','add','fontsize',fontsize,'fontname',fontname);
+    set(f.(fn),'nextplot','add','fontsize',fontsize,'fontname',fontname,...
+        'parent',f.f);
     
 end
 
 % If the plot is a double axes plot
 if df==1
     f.s2=copyobj(f.s1,f.f);
-    set(f.s1,'box','off');
+    set(f.s1,'box','off','parent',f.f);
     set(f.s2,'box','off','yaxislocation','right','xaxislocation','top',...
-        'xticklabel',[],'color','none');
+        'xticklabel',[],'color','none','parent',f.f);
 end
