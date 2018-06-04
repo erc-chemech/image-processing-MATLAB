@@ -158,7 +158,7 @@ function ca(ax,c)
     targetw=fip(3)-ti(1)-ti(3)-c_dw-2*c;
     
     % find target height
-    targeth=fip(4)-ti(2)-ti(4)-c_dh-2*c;
+    targeth=fip(4)-ti(2)-ti(4)-c_dh-4*c;
     
     ax.Position = [targetx targety targetw targeth];
     
