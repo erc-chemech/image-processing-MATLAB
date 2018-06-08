@@ -16,7 +16,10 @@ function center_axes(ax,varargin)
 %%
 
     %  Parse input variables
-    narginchk(1,inf);
+    if nargin<1
+        ax=gca;
+    end
+    
     params=inputParser;
     params.CaseSensitive=false;
     params.addParameter('margins',5,@(x) isnumeric(x));

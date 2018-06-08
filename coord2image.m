@@ -28,8 +28,14 @@ function [out,A,B]=coord2image(X,Y,Z1,w,type)
 %%
 
 % This fcns converts coordinates of intensities into an image array
-n1=min(X):w:max(X);
-n2=min(Y):w:max(Y);
+if numel(w)==1
+    n1=min(X):w:max(X);
+    n2=min(Y):w:max(Y);
+elseif numel(w)==2
+    n1=min(X):w(1):max(X);
+    n2=min(Y):w(2):max(Y);
+end
+
 a1=linspace(min(X),max(X),numel(n1));
 b1=linspace(min(Y),max(Y),numel(n2));
 

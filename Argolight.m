@@ -46,7 +46,8 @@ function f1=Argolight(I1,test_I,varargin)
 % 'filter_outlier': option to remove outliers, as detected by isoutlier fcn
         % true (default)
         % false
-
+% 'fig_n': figure number (default is 1) in which to plot the results in
+%
 %% OUTPUT VARIABLES
 % f1: structure variables containing the foloowing fieldnames:
 % 
@@ -90,6 +91,7 @@ params.addParameter('dot_I','averaged',@(x) ischar(x)==1);
 params.addParameter('image_gain',2,@(x) isnumeric(x)&numel(x)==1);
 params.addParameter('fit_I','lowess',@(x) ischar(x)==1);
 params.addParameter('filter_outlier',true,@(X) islogical(x));
+params.addParameter('fig_n',1,@(x) isnumeric(x));
 params.parse(varargin{:});
 
 % Extract out values from parsed input
@@ -99,6 +101,7 @@ dot_I=params.Results.dot_I;
 image_gain=params.Results.image_gain;
 fit_I=params.Results.fit_I;
 filter_outlier=params.Results.filter_outlier;
+fig_n=params.Results.fig_n;
 
 % extract offset associated with image gain (defaut is 2)
 % Dark offset values obtained from dark images. Indices corresponds to
@@ -369,7 +372,8 @@ cf_coeff=coeffvalues(sfcf);
 %% PLOT THE RESULTS
 disp('Plotting the results...');
 
-f1=my_fig(1,{[2 3 1] [2 3 2] [4 6 5:6] [2 3 4] [2 3 5] [4 6 17 23] [4 6 18 24],...
+f1=my_fig(fig_n,...
+    {[2 3 1] [2 3 2] [4 6 5:6] [2 3 4] [2 3 5] [4 6 17 23] [4 6 18 24],...
     [4 6 11:12]},...
     'fontsize',8,'gap',[0.12 0.1],'marg_w',[0.1 0.03],'marg_h',[0.09 0.04]);
 axis([f1.s1 f1.s2 f1.s4 f1.s5 f1.s6 f1.s7],'image');
