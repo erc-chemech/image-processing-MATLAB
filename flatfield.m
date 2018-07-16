@@ -33,6 +33,9 @@ Isum=zeros(in_size);
 for dum=1:numel(filenames)
     filename=filenames{dum};%get current filename
     [~,name,~]=fileparts(filename);%parse filename
+    if isvarname(name)==0
+        name='IH_name';
+    end
     I.(name)=import_tiff_stack(filename,1);%Import tif file
     Isum=Isum+I.(name).tiff_stack;%add all of the images
 end

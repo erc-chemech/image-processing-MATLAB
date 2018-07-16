@@ -19,15 +19,11 @@ function out=my_color_gradient(color1,color2,n)
 % process the color1 variable
 if ischar(color1)
     color1=char2color(color1);%if it is a matlab char ('r','g','b',etc.)
-else
-%     color1=color1./max(color1);% normalize colors
 end
 
 % process the color2 variable
 if ischar(color2)
     color2=char2color(color2);%if it is a matlab char ('r','g','b',etc.)
-else
-%     color2=color2./max(color2);% normalize colors
 end
 
 % red channel
@@ -39,7 +35,7 @@ g_space=linspace(color1(2),color2(2),n);
 % blue channel
 b_space=linspace(color1(3),color2(3),n);
 
-out=flipud([r_space;g_space;b_space]');
+out=[r_space;g_space;b_space]';
 end
 
 function out=char2color(color)
