@@ -260,6 +260,8 @@ for dum=1:size(centroids,1)
     % by calculating the distance of point from the cross point
     if ~isnan(cross(1))
         DCA=norm([c1+c(1),r1+r(1)]-cross);
+    else
+        DCA=nan;
     end
     
     if ~isempty(ii1)
