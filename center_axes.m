@@ -22,7 +22,7 @@ function center_axes(ax,varargin)
     
     params=inputParser;
     params.CaseSensitive=false;
-    params.addParameter('margins',5,@(x) isnumeric(x));
+    params.addParameter('margins',25,@(x) isnumeric(x));
     params.parse(varargin{:});
     
     % Extract out values from parse input
