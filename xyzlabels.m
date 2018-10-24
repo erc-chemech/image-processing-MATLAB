@@ -1,4 +1,4 @@
-function varargout=xylabels(ax,xl,yl,varargin)
+function varargout=xyzlabels(ax,xl,yl,zl,varargin)
 % Creator: Joshua Yeh
 % Date created: 2018-01-09
 % 
@@ -11,6 +11,7 @@ function varargout=xylabels(ax,xl,yl,varargin)
 % array)
 % xl: xlabel string
 % yl: ylabel string
+% zl: zlabel string
 % varargin:
 %     "fontweight": define fontweight for both labels
 %     "fontsize": define fontsize for both labels
@@ -20,12 +21,12 @@ function varargout=xylabels(ax,xl,yl,varargin)
 % varargout{2}: handle to ylabel
 
 % Check to see if xl and yl are character strings
-if ~ischar(xl)||~ischar(yl)
-    error('xl and yl must be character strings');
+if ~ischar(xl)||~ischar(yl)||~ischar(zl)
+    error('xl, yl, and zl must be character strings');
 end
 
 % Parse input variables
-narginchk(3,inf);
+narginchk(4,inf);
 params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('fontweight','normal',@(x) ischar(x));
@@ -45,10 +46,14 @@ for dum=1:length(ax)
         'fontname',fontname,'interpreter',interpreter);
     yh0=ylabel(ax(dum),yl,'fontsize',fontsize,'fontweight',fontweight,...
         'fontname',fontname,'interpreter',interpreter);
+    zh0=zlabel(ax(dum),yl,'fontsize',fontsize,'fontweight',fontweight,...
+        'fontname',fontname,'interpreter',interpreter);
     set(xh0,'units','normalized');
     set(yh0,'units','normalized');
+    set(zh0,'units','normalized');
 end
 
 % define output
 varargout{1}=xh0;%xlabel handle
 varargout{2}=yh0;%ylabel handle
+varargout{3}=zh0;%zlabel handle
