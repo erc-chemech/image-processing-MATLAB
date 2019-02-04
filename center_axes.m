@@ -23,13 +23,15 @@ function center_axes(ax,varargin)
     params=inputParser;
     params.CaseSensitive=false;
     params.addParameter('margins',25,@(x) isnumeric(x));
+    params.addParameter('c_dy',5,@(x) isnumeric(x));
     params.parse(varargin{:});
     
     % Extract out values from parse input
     c=params.Results.margins;
+    c_dy=params.Results.c_dy;
 
     if isa(ax,'matlab.graphics.axis.Axes')
-        ca(ax,c);
+        ca(ax,c,c_dy);
     elseif isa(ax,'matlab.ui.Figure')
         axs=findall(ax,'type','axes');
         for dum=1:numel(axs)
@@ -40,7 +42,7 @@ function center_axes(ax,varargin)
     
 end
 
-function ca(ax,c)
+function ca(ax,c,c_dy)
     fig=ax.Parent;%figure handle
     fig.Units='pixels';
     ax.Units='pixels';
@@ -48,7 +50,7 @@ function ca(ax,c)
     ti = ax.TightInset; %margins of text labels
     outerpos = ax.OuterPosition;%outer position of the axes
     c_dx=0;%additional x offset needed if colorbar exists
-    c_dy=5;%additional y offset needed if colorbar exists
+%     c_dy=5;%additional y offset needed if colorbar exists
     c_dw=0;
     c_dh=0;
     

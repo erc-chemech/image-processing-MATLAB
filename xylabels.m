@@ -20,7 +20,7 @@ function varargout=xylabels(ax,xl,yl,varargin)
 % varargout{2}: handle to ylabel
 
 % Check to see if xl and yl are character strings
-if ~ischar(xl)||~ischar(yl)
+if (~ischar(xl)&&~iscell(xl))||(~ischar(yl)&&~iscell(yl))
     error('xl and yl must be character strings');
 end
 
@@ -30,7 +30,7 @@ params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('fontweight','normal',@(x) ischar(x));
 params.addParameter('fontsize',ax.FontSize,@(x) isnumeric(x));
-params.addParameter('fontname','Microsoft YaHei Light',@(x) ischar(x));
+params.addParameter('fontname','Heveltica',@(x) ischar(x));
 params.addParameter('interpreter','tex',@(x) strcmp(x,'tex')|strcmp(x,'latex'));
 params.parse(varargin{:});
 

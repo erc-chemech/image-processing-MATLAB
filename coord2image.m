@@ -16,7 +16,7 @@ function [out,A,B]=coord2image(X,Y,Z1,w,type)
 % 
 % type:
     % 'mean': take the mean of the datapoints within the same bin
-    % 'none': uses the default behavior of summing all of the datapoints
+    % 'none' or 'sum': uses the default behavior of summing all of the datapoints
 % 
 %% OUTPUT VARIABLES
 % out: the image array
@@ -46,7 +46,7 @@ br=interp1(b1,1:numel(b1),Y(:),'nearest');
 % Convert coordinates into an image array
 if strcmp(type,'mean')
     out=accumarray([br ar],Z1(:),[numel(n2) numel(n1)],@(x) mean(x));
-elseif strcmp(type,'none')
+elseif strcmp(type,'none')||strcmp(type,'sum')
     out=accumarray([br ar],Z1(:),[numel(n2) numel(n1)]);
 elseif strcmp(type,'squared')
     out=accumarray([br ar],Z1(:),[numel(n2) numel(n1)],@(x) sum(x).^2);

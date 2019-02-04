@@ -44,7 +44,7 @@ params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('gap',0.11,@(x) isnumeric(x));
 params.addParameter('fontsize',18,@(x) isnumeric(x));
-params.addParameter('fontname','Microsoft YaHei Light',@(x) ischar(x));
+params.addParameter('fontname','Helvetica',@(x) ischar(x));
 params.addParameter('visible','on', @(x) strcmp(x,'on')|strcmp(x,'off'));
 df=0;%flag for whether figure is a double axes plot
 % if only 1 axes is inputed
