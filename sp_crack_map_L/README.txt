@@ -1,0 +1,1 @@
+The functions in this sublibrary is used for performing loading (only) crack tip mapping analysis. This sublibrary is dependent on the functions listed in the parent library.
