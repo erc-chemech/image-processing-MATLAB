@@ -77,8 +77,8 @@ if skip==0
     output.tiff_stack_q1=tiff_stack_q1;%1st quartile of each plane
     output.tiff_stack_q3=tiff_stack_q3;%1st quartile of each plane
     output.tiff_stack_std=tiff_stack_std;%std of each plane
-    output.res=res;%resolution of image in um/px
 end
 output.file=file;%filename of the imported tiff file
 output.info=imfinfo(file);%Stores the metadata information
+output.res=res;%resolution of image in um/px
 disp('Import finished');
