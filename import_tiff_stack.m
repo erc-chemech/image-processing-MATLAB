@@ -4,10 +4,11 @@ function output=import_tiff_stack(file,r,varargin)
 % structure. This function only supports greyscale or binary images!
 %
 %% INPUT VARIABLES
-% file: names of the tiff file to be imported
+% file: name of the tiff file to be imported (string variable)
 % 
 % r: the pixe side length of the square area in which a
-% medfilt2 will be applied (default is r=10)
+% medfilt2 will be applied (setting r to 1 is the same as not applying a
+% medfilt2 operation)
 % 
 % varargin 'fieldname',<value>
         % 'skip': skip basic calculations of images
@@ -19,7 +20,7 @@ function output=import_tiff_stack(file,r,varargin)
 % 
 %%
 % parse user inputs
-narginchk(2,inf);
+narginchk(2,inf);%check number of inputs is correct
 params=inputParser;
 params.addParameter('skip',0,@(x) isnumeric(x)&(x==1||x==0));
 params.addParameter('silence',0,@(x) isnumeric(x)&(x==1||x==0));

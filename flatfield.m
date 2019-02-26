@@ -6,7 +6,7 @@ function [IH,x0,y0,I_n]=flatfield(filenames,varargin)
 % images obtained from the Nikon AZ100 microscope.
 % 
 %% INPUT
-% filenames: list of filenames
+% filenames: list of filenames (cell variable)
 % 
 % varargout: 'fieldname', <key>
     % 'in_size': pixel dimensions of input images
@@ -17,7 +17,7 @@ function [IH,x0,y0,I_n]=flatfield(filenames,varargin)
 % out: the output surface fitted intensity image
 % 
 %% PARSE THE INPUTS
-narginchk(1,inf);
+narginchk(1,inf);%check number of inputs is correct
 params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('in_size',[512 512],@(x) isnumeric(x));
