@@ -32,7 +32,7 @@ function f1=Argolight(I1,test_I,varargin)
 %  detection, there are two types:
         % 'max' assigns the maximum intensity detected in the subimage to
         % the grid point
-        % 'averaged' assigns the averaged inensities in the subimage with
+        % 'averaged' assigns the averaged intensities in the subimage with
         % intensity levels > 10 ADU (analogue to digital units)
 % 
 % 'clim': the color map span for the inhomo. illumination surface plot

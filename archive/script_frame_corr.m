@@ -3,7 +3,7 @@ function [mov,f1]=script_frame_corr(filename,frames,ROI,ref_ROI,varargin)
 % Date created: 2017/11/03
 % 
 %% DESCRIPTION
-% This script automates frame correction for frames extracted from a
+% This script automates frame correction for frames extracted from a sp
 % mechanophore video experiment. A figure(1) window is created showing the
 % original image of the region of interest (ROI) and a contour plot of the
 % detected activated mechanophores in the sample. Histograms prior to
