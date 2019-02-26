@@ -33,7 +33,8 @@ silence=params.Results.silence;
 [~,name,ext]=fileparts(file);
 
 disp(['Importing ',name,ext]);
-tiff_info=imfinfo(file);%tiff info
+tiff_info=imfinfo(file);%tiff metadata
+res=tiff_info.UnknownTags(2).Value;%resolution of the image um/px
 disp(['Detected ',num2str(size(tiff_info,1)),' page(s) in tif file']);
 tiff_stack=imread(file,1);%read first image in the stack
 tiff_stack=medfilt2(double(tiff_stack),[r r]);% remove noise using medium filter
@@ -76,6 +77,7 @@ if skip==0
     output.tiff_stack_q1=tiff_stack_q1;%1st quartile of each plane
     output.tiff_stack_q3=tiff_stack_q3;%1st quartile of each plane
     output.tiff_stack_std=tiff_stack_std;%std of each plane
+    output.res=res;%resolution of image in um/px
 end
 output.file=file;%filename of the imported tiff file
 output.info=imfinfo(file);%Stores the metadata information

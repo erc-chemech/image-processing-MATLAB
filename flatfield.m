@@ -14,7 +14,10 @@ function [IH,x0,y0,I_n]=flatfield(filenames,varargin)
     % fitting
 % 
 %% OUTPUT
-% out: the output surface fitted intensity image
+% IH: the output surface fitted intensity image based on the surface fit
+% x0: x-coordinates in each pixel
+% y0: y-coordinates in each pixel
+% I_n: normalized intensity image based on the surface fit
 % 
 %% PARSE THE INPUTS
 narginchk(1,inf);%check number of inputs is correct
@@ -31,13 +34,22 @@ fit_sampling=params.Results.fit_sampling;
 %% Import images from filenames and perform statistical calculations
 
 Isum=zeros(in_size);
-for dum=1:numel(filenames)
-    filename=filenames{dum};%get current filename
-    [~,name,~]=fileparts(filename);%parse filename
+if iscell(filenames)
+    for dum=1:numel(filenames)
+        filename=filenames{dum};%get current filename
+        [~,name,~]=fileparts(filename);%parse filename
+        if isvarname(name)==0
+            name='IH_name';
+        end
+        I.(name)=import_tiff_stack(filename,1);%Import tif file
+        Isum=Isum+I.(name).tiff_stack;%add all of the images
+    end
+else ischar(filenames)
+    [~,name,~]=fileparts(filenames);%parse filename
     if isvarname(name)==0
         name='IH_name';
     end
-    I.(name)=import_tiff_stack(filename,1);%Import tif file
+    I.(name)=import_tiff_stack(filenames,1);%Import tif file
     Isum=Isum+I.(name).tiff_stack;%add all of the images
 end
 
