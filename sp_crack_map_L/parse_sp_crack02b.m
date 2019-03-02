@@ -14,6 +14,7 @@ function parse_sp_crack02b(filename,frame_n,varargin)
 % frame_n: the frame in which the analysis will be performed on
 % 
 % varargin: <'field_name'>,<'value'>
+    %
     % 'skip': A toggle flag where a value of 1 signifies to the function to
     % skip manual import of the frame from the video file. A value of 0
     % signifies the opposite.
@@ -21,12 +22,9 @@ function parse_sp_crack02b(filename,frame_n,varargin)
     % 'ref_frame': the reference frame representing the beginning of the
     % experiment (default is 1)
     %
-    % 'ROI': the region of interest in the main frame
+    % 'ROI': the sample region of interest in the frame being analyzed
     % 
-    % 'ref_ROI': the region go interest in the reference frame
-    %
-    % 'white_ROI': the region of interest representing the white area in
-    % the main frame
+    % 'ref_ROI': the sample region of interest in the reference frame
     %
     % 'white_ref_ROI': the region of interest representing the white area
     % in the reference frame
@@ -90,6 +88,11 @@ function parse_sp_crack02b(filename,frame_n,varargin)
     % stress. This mat file must contain a variable named 'TS_NS', which is
     % a fit object correlating true stress vs. nominal stress.
     %
+    % 'corr_factor': a correction factor that takes into account the diff.
+    % distance between the camera between the calibration and fracture exp/
+    %
+    % 'S2E_conversion': file that converts stresses to energy density
+    %
 %% Parse input variables
 
 narginchk(1,inf);%check the number of input values
@@ -99,8 +102,6 @@ params.addParameter('skip',1,@(x) islogical(x)|x==1|x==0);
 params.addParameter('ref_frame',1,@(x) isnumeric(x));
 params.addParameter('ROI',[500 800 60 270],@(x) isnumeric(x)&numel(x)==4);
 params.addParameter('ref_ROI',[800 1000 250 300],...
-    @(x) isnumeric(x)&numel(x)==4);
-params.addParameter('white_ROI',[600 700 350 450],...
     @(x) isnumeric(x)&numel(x)==4);
 params.addParameter('white_ref_ROI',[800 1000 500 600],...
     @(x) isnumeric(x)&numel(x)==4);
@@ -121,12 +122,13 @@ params.addParameter('LoadFitFile',...
     @(x) ischar(x));
 params.addParameter('CSMFile','CSM_TN135.fig', @(x) ischar(x));
 params.addParameter('res',1e-3,@(x) isnumeric(x));
-params.addParameter('max',50,@(x) isnumeric(x)&x>0);
+params.addParameter('max',100,@(x) isnumeric(x)&x>0);
 params.addParameter('Ires',38.70,@(x) isnumeric(x));
-params.addParameter('G2E_conversion','../G matching/TN135_E.mat');
+params.addParameter('S2E_conversion','../G matching/TN135_E.mat');
 params.addParameter('map_value','stress');
 params.addParameter('calc_true_stress',0,@(x) islogical(x)|x==1|x==0);
 params.addParameter('true_stress_mat','',@(x) ischar(x));
+params.addParameter('corr_factor',1,@(x) isnumeric(x));
 params.parse(varargin{:});
 
 %Extract out values from parsed input
@@ -134,7 +136,6 @@ skip=params.Results.skip;
 ref_frame=params.Results.ref_frame;
 ROI=params.Results.ROI;
 ref_ROI=params.Results.ref_ROI;
-white_ROI=params.Results.white_ROI;
 white_ref_ROI=params.Results.white_ref_ROI;
 background_thresh=params.Results.background_thresh;
 dark_thresh=params.Results.dark_thresh;
@@ -151,10 +152,11 @@ RCC_thresh=params.Results.RCC_thresh;
 res=params.Results.res;
 max1=params.Results.max;
 Ires=params.Results.Ires;
-G2E_conversion=params.Results.G2E_conversion;
+S2E_conversion=params.Results.S2E_conversion;
 map_value=params.Results.map_value;
 calc_ts=params.Results.calc_true_stress;
 ts_mat=params.Results.true_stress_mat;
+corr_factor=params.Results.corr_factor;
 
 if video_mode==1
     visible='off';
@@ -179,7 +181,7 @@ else
 end
 
 % Load the loading fit curves for TN135
-load(LoadFitFile);
+LFF=load(LoadFitFile,'RCCvBCC','stressvBCC');
 
 disp('Frame loaded!');
 
@@ -194,8 +196,7 @@ end
 subimage=frame(2).CData(ROI(1):ROI(2),ROI(3):ROI(4),:);
 ref=frame(1).CData(ref_ROI(1):ref_ROI(2),ref_ROI(3):ref_ROI(4),:);
 
-% Define white refference area
-white=frame(2).CData(white_ROI(1):white_ROI(2),white_ROI(3):white_ROI(4),:);
+% Define white reference area
 white_ref=frame(1).CData(white_ref_ROI(1):white_ref_ROI(2),...
     white_ref_ROI(3):white_ref_ROI(4),:);
 
@@ -251,19 +252,16 @@ end
 [R_ratio,G_ratio,B_ratio]=rgb_ratio(frame_corr);
 [R_ratio0,G_ratio0,B_ratio0]=rgb_ratio(ref_corr);
 
-
 % Calculate chromatic change
 % main frame
-RCC=R_ratio-nanmean(R_ratio0(:));
-GCC=G_ratio-nanmean(G_ratio0(:));
-BCC=B_ratio-nanmean(B_ratio0(:));
-TCC=sqrt(RCC.^2+GCC.^2+BCC.^2);
+RCC=(R_ratio-nanmean(R_ratio0(:))).*corr_factor;
+GCC=(G_ratio-nanmean(G_ratio0(:))).*corr_factor;
+BCC=(B_ratio-nanmean(B_ratio0(:))).*corr_factor;
 
 % reference frame
 RCC0=R_ratio0-nanmean(R_ratio0(:));
 GCC0=G_ratio0-nanmean(G_ratio0(:));
 BCC0=B_ratio0-nanmean(B_ratio0(:));
-TCC0=sqrt(RCC0.^2+GCC0.^2+BCC0.^2);
 
 
 %% PARSE PIXELS AS LOADING, OTHER, OR BACKGROUND
@@ -271,26 +269,28 @@ TCC0=sqrt(RCC0.^2+GCC0.^2+BCC0.^2);
 % import the 0-iso stress line from color-stress map for TN135
 try delete(fcsm.f); catch; end
 fcsm.f=openfig(CSMFile,'invisible');
-fcsm.xdata=get(findall(fcsm.f,'userdata','loading'),'xdata');%BCC
-fcsm.ydata=get(findall(fcsm.f,'userdata','loading'),'ydata');%RCC
+fcsm.xdata=get(findall(fcsm.f,'type','surface'),'xdata');%BCC
+fcsm.ydata=get(findall(fcsm.f,'type','surface'),'ydata');%RCC
 try delete(fcsm.f); catch; end
 
 % Create indexed array of BCC and RCC
 disp('Parsing color coordinates');
-IA=[[1:numel(RCC(:))]',BCC(:),RCC(:),polyval(RCCvBCC,BCC(:)),...
-    zeros(numel(TCC(:)),1),...%flag col
-    ones(numel(TCC(:)),1),ones(numel(TCC(:)),1)];
+% IA col label: px vector index,BCC,RCC,fitted RCC,
+% flag for tagging pxs as loading etc., px row, px col
+IA=[[1:numel(RCC(:))]',BCC(:),RCC(:),polyval(LFF.RCCvBCC,BCC(:)),...
+    zeros(numel(BCC(:)),1),...%flag col
+    ones(numel(BCC(:)),1),ones(numel(BCC(:)),1)];
 thresh_BCC=quantile(BCC0(:),BCC_thresh);
 thresh_RCC=quantile(RCC0(:),RCC_thresh);
 
 % Determine the closest distance between the current pixel chromatic
 % coordinate and the chromatic loading curve.
 BCC_load=linspace(0.001,0.1,1e3)';
-RCC_load=polyval(RCCvBCC,BCC_load);
+RCC_load=polyval(LFF.RCCvBCC,BCC_load);
 [d_index,d]=knnsearch([BCC_load RCC_load],IA(:,2:3));
 
 for dum=1:numel(RCC)
-    [r,c]=ind2sub(size(TCC),dum);
+    [r,c]=ind2sub(size(BCC),dum);
     IA(dum,6:7)=[r,c];
     
     if isnan(IA(dum,2))||isnan(IA(dum,3))
@@ -307,7 +307,7 @@ for dum=1:numel(RCC)
     end
     
     if mod(dum,1e4)==0
-        disp([num2str(dum),' of ',num2str(numel(TCC)),' completed']);
+        disp([num2str(dum),' of ',num2str(numel(BCC)),' completed']);
     end
 end
 
@@ -322,7 +322,7 @@ if noise_filter==1%if flag is turned on, apply a noise filter to the parsed pxs
 
     % Apply noise filter on a smaller local scale (loading) This removes
     % isolated pixels.
-    template=zeros(size(TCC));
+    template=zeros(size(BCC));
     template(m3)=1;%set elements corresponding to unloading to 1
     local_sum=conv2(template,ones(3),'same');%compute local sum
     ii=find(local_sum<=2&local_sum>0);
@@ -331,7 +331,7 @@ if noise_filter==1%if flag is turned on, apply a noise filter to the parsed pxs
     m3=find(IA(:,5)==3);%indices associated with loading color change
 
     % Apply noise filter on a larger local scale
-    template=zeros(size(TCC));
+    template=zeros(size(BCC));
     template(m3)=1;%set elements corresponding to unloading to 1
     local_sum=conv2(template,ones(8),'same');%compute local sum
     ii=find(local_sum<=5&local_sum>0);
@@ -361,12 +361,12 @@ if stress_calc==1
     end
     
     % load mat file needed to convert nominal stress to energy density
-    G2E=load(G2E_conversion);
+    G2E=load(S2E_conversion);
     
     % process loading points
     for dum=1:numel(m3)
         ii=d_index(m3(dum));%index of BCC pt closest to loading curve
-        m3_s(dum)=polyval(stressvBCC,BCC_load(ii));%nominal stress in MPa
+        m3_s(dum)=polyval(LFF.stressvBCC,BCC_load(ii));%nominal stress in MPa
         m3_E(dum)=spline(G2E.stress,G2E.E,m3_s(dum));%energy density in MJ/m^3
         
         if calc_ts==1%det. true stress (MPa) based on correl. w/ nominal stress
@@ -388,71 +388,50 @@ disp('Processing finished');
 
 % Declare figure handles
 
-% Figure 1
+
+
+
+% Figure 3
+
+
+% Figure 4
+
+
+% Figure 5
+
+
+% Figure 6
+
+
+% Figure 7
+
+
+% Figure 8
+
+% xylabels(f8.s1,'Blue chromatic change','Red chromatic change');
+
+%% %%%%%%%%%%%%%%%%%%% figure 1 %%%%%%%%%%%%%%%%%%%%%
+
 f1=my_fig(1,{[1 2 1] [1 2 2]},'visible',visible);
 axis([f1.s1 f1.s2],'image');
 set(f1.f,'name','Raw extracted frame');
 
-% Figure 2
-f2=my_fig(2,{[3 2 1] [3 2 2] [3 2 3] [3 2 4] [3 2 5] [3 2 6]},...
-    'fontsize',10,'visible',visible);
-set(f2.f,'name','Corrected extracted frame');
-title(f2.s1,'histogram of reference_{corr}','fontsize',12);
-title(f2.s2,'histogram of frame_{corr}','fontsize',12);
-title(f2.s3,'histogram of \DeltaB_{ratio} and \DeltaR_{tot} for ref',...
-    'fontsize',12);
-title(f2.s4,'histogram of \DeltaB_{ratio} and \DeltaR_{tot} for frame',...
-    'fontsize',12);
-title(f2.s5,'histogram of ref intensities');
-title(f2.s6,'histogram of frame intensities');
-set(f2.s3,'xlim',[-0.03 0.03]);
-set(f2.s4,'xlim',[-0.03 0.03]);
-
-% Figure 3
-f3=my_fig(3,{[1 1 1]},'visible',visible);
-f3.f.Position(4)=565;
-f3.s2=axes;
-set(f3.s2,'position',[0.8 0.7 0.1 0.3]);
-set(f3.f,'name','Color mapping of reference sample area');
-xylabels(f3.s1,'Blue chromatic change','Red chromatic change');
-
-% Figure 4
-f4=my_fig(4,{[1 1 1]},'visible',visible);
-f4.f.Position(4)=565;
-f4.f.Alphamap=linspace(0,1,256);
-set(f4.f,'name','Color mapping of activated sample area');
-xylabels(f4.s1,'Blue chromatic change','Red chromatic change');
-set(f4.s1,'xlim',[0 0.1],'ylim',[-0.1 0]);
-
-% Figure 5
-f5=my_fig(5,{[1 1 1]},'marg_w',[0.01 0.01],'marg_h',[0.01 0.01],...
-    'visible',visible);
-f5.f.Alphamap=linspace(0,1,256);
-f5.f.Position(3:4)=[667 645];
-
-% Figure 6
-f6=my_fig(6);
-f6.f.Position([3,4])=[340 330];
-f6.s1.Layer='top';
-
-% Figure 7
-if stress_calc==1
-    f7=my_fig(7,{[1 2 1] [1 2 2]});
-    f7.f.Alphamap=linspace(0,1,256);
-    f7.f.Position(3:4)=[1100 660];
-    f7.s1.Layer='top';
-    xylabels(f7.s2,'Blue chromatic change','Red chromatic change');
-end
-
-% Figure 8
-f8=my_fig(8);
-% xylabels(f8.s1,'Blue chromatic change','Red chromatic change');
-
-%% %%%%%%%%%%%%%%%%%%% figure 1 %%%%%%%%%%%%%%%%%%%%%
 imagesc(f1.s1,uint8(ref_corr));
 imagesc(f1.s2,uint8(frame_corr));
 
 %% %%%%%%%%%%%%%%%%%%% figure 2 %%%%%%%%%%%%%%%%%%%%%
+
+f2=my_fig(2,{[3 2 1] [3 2 2] [3 2 3] [3 2 4] [3 2 5] [3 2 6]},...
+    'fontsize',10,'visible',visible);
+set(f2.f,'name','Corrected analyzed frame');
+title(f2.s1,'ref_{corr}');
+title(f2.s2,'frame_{corr}');
+title(f2.s3,'BCC and RCC for ref');
+title(f2.s4,'BCC and RCC for frame');
+title(f2.s5,'ref intensities');
+title(f2.s6,'frame intensities');
+set(f2.s3,'xlim',[-0.03 0.03]);
+set(f2.s4,'xlim',[-0.03 0.03]);
 
 histogram(f2.s1,ref_corr(:,:,1),'facecolor','r','facealpha',0.5);
 histogram(f2.s1,ref_corr(:,:,2),'facecolor','g','facealpha',0.5);
@@ -467,8 +446,18 @@ histogram(f2.s4,RCC(:),'facecolor','r','facealpha',0.5);
 histogram(f2.s5,ref_corr_sum(:));
 histogram(f2.s6,frame_corr_sum(:));
 
+linkaxes([f2.s1 f2.s2],'x');
+linkaxes([f2.s3 f2.s4],'x');
+linkaxes([f2.s5 f2.s6],'x');
+
 %% %%%%%%%%%%%%%%%%%%% figure 3 %%%%%%%%%%%%%%%%%%%%%
-% Plot loading line
+
+f3=my_fig(3,{[1 1 1]},'visible',visible);
+f3.f.Position(4)=565;
+f3.s2=axes;
+set(f3.s2,'position',[0.8 0.7 0.1 0.3]);
+set(f3.f,'name','Color mapping of reference sample area');
+xylabels(f3.s1,'Blue chromatic change','Red chromatic change');
 
 plot3(f3.s1,BCC_load,RCC_load,...
     ones(1,numel(BCC_load)).*1000,'k--');
@@ -492,6 +481,14 @@ set(f3.s2,'box','off','xcolor','none','ycolor','none','xtick',[],...
 
 
 %% %%%%%%%%%%%%%%%%%%% figure 4 %%%%%%%%%%%%%%%%%%%%%
+
+f4=my_fig(4,{[1 1 1]},'visible',visible);
+f4.f.Position(4)=565;
+f4.f.Alphamap=linspace(0,1,256);
+set(f4.f,'name','Color mapping of activated sample area');
+xylabels(f4.s1,'Blue chromatic change','Red chromatic change');
+set(f4.s1,'xlim',[0 0.1],'ylim',[-0.1 0]);
+
 plot3(f4.s1,BCC_load,RCC_load,...
     ones(1,numel(BCC_load)).*1000,'k--');
 
@@ -516,7 +513,13 @@ f4.c.Box='off';
 f4.c.TickDir='out';
 
 %% %%%%%%%%%%%%%%%%%%% figure 5 %%%%%%%%%%%%%%%%%%%%%
-imagesc(f5.s1,uint8(rgb_correction(subimage,white,'simple',255)));
+
+f5=my_fig(5,{[1 1 1]},'marg_w',[0.01 0.01],'marg_h',[0.01 0.01],...
+    'visible',visible);
+f5.f.Alphamap=linspace(0,1,256);
+f5.f.Position(3:4)=[667 645];
+
+imagesc(f5.s1,uint8(rgb_correction(subimage,white_ref,'simple',255)));
 plot(f5.s1,IA(m3,7),IA(m3,6),'b.');
 patch(f5.s1,[0 78.94 78.94 0 0],[5 5 25 25 5],'w','edgecolor','none',...
     'facealpha',0.8);
@@ -528,6 +531,11 @@ set(f5.s1,'box','off','xtick',[],'ytick',[],'xcolor','none',...
     'ycolor','none');
 
 %% %%%%%%%%%%%%%%%%%%% figure 6 %%%%%%%%%%%%%%%%%%%%%
+
+f6=my_fig(6);
+f6.f.Position([3,4])=[340 330];
+f6.s1.Layer='top';
+
 if stress_calc==1
     copyobj(findall(f5.s1,'type','image'),f6.s1);% copy image frame
     axis(f6.s1,'image');
@@ -538,7 +546,7 @@ if stress_calc==1
     if strcmp(map_value,'stress')
         if calc_ts==0
             m3_m=m3_s;
-            climm=[2 4];
+            climm=[2 6];
             strm='nominal stress (MPa)';
         elseif calc_ts==1
             m3_m=m3_ts;
@@ -547,7 +555,7 @@ if stress_calc==1
         end
     elseif strcmp(map_value,'energy_density')
         m3_m=m3_E;
-        climm=[0.5 1];
+        climm=[0.5 1.5];
         strm='energy density (MPa)';
     end
     
@@ -570,14 +578,20 @@ end
 %% %%%%%%%%%%%%%%%%%%% figure 7 %%%%%%%%%%%%%%%%%%%%%
 
 if stress_calc==1
+    
+    f7=my_fig(7,{[1 2 1] [1 2 2]});
+    f7.f.Alphamap=linspace(0,1,256);
+    f7.f.Position(3:4)=[1100 660];
+    f7.s1.Layer='top';
+    xylabels(f7.s2,'Blue chromatic change','Red chromatic change');
+    
     copyobj(findall(f5.s1,'type','image'),f7.s1);% copy image frame
     axis(f7.s1,'image');
     f7.s1.Position(1)=0.07;
     set(f7.s1,'xtick',[],'ytick',[])
     
     % Plot chromatic coordinates on the image frame
-    zdata=px_coord2image(IA(m3,6),IA(m3,7),m3_m,size(ref_corr));
-    surf(f7.s1,zdata);
+    scatter3(f7.s1,IA(m3,7),IA(m3,6),m3_m,'filled','cdata',m3_m,'sizedata',5);
     cmap=jet(256);
     colormap(f7.s1,cmap);
     set(f7.s1,'clim',climm);
@@ -615,12 +629,16 @@ if export_var==1
 end
 
 %% %%%%%%%%%%%%%%%%%%% figure 8 %%%%%%%%%%%%%%%%%%%%%
+
+f8=my_fig(8);
 copyobj(get(f4.s1,'children'),f8.s1);
 set(f8.s1,'xlim',[0 0.1],'ylim',[-0.08 0]);
 center_axes(f8.s1);
 
 %% %%%%%%%%%%%%%%%%%%% figure 9 %%%%%%%%%%%%%%%%%%%%%
-f9.f=copyobj(f6.f,0);
+
+f9.f=figure(9); clf(f9.f);
+f9.s1=copyobj(findall(f6.f,'type','axes'),f9.f);
 f9.s1=findall(f9.f,'type','axes');
 delete(findall(f9.f,'type','surface'));
 scatter3(f9.s1,IA(m3,7),IA(m3,6),m3_m,'filled','cdata',m3_m,'sizedata',5);

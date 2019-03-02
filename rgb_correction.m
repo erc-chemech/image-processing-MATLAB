@@ -114,4 +114,6 @@ switch type
         if flag_D==1
             disp(' ')
         end
+    case 'none'
+        I_corr=I;
 end
