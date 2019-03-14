@@ -31,10 +31,12 @@ function parse_sp_crack02b(filename,frame_n,varargin)
     %
     % 'background_thresh': the background threshold value that
     % distinguishes the background from the foreground (for masking
-    % purposes)
+    % purposes) The threshold value is taken rel. to the total px
+    % intensity.
     %
     % 'dark_thresh': the dark thereshold value that excludes the dark
-    % regions in the sample (for masking purposes)
+    % regions in the sample (for masking purposes) The threshold value is
+    % taken rel. to the total px intensity.
     %
     % 'stress_calc': toggle (1 or 0, 1 is default) for performing stress
     % association of identified loading and unloading responses
@@ -48,6 +50,9 @@ function parse_sp_crack02b(filename,frame_n,varargin)
     % 'BCC_thresh': percentil (0 to 1) threshold distinguishing sigal from
     % noise
     %
+    % 'res': this parameter controls the hexagon size for the honeycomb
+    % 2d histrogram plots
+    % 
     % 'import_mask': this is a flag (0 (default) or 1) to manually import
     % an image mask and use it in addition to the masking algorithm written
     % in this function
@@ -93,6 +98,8 @@ function parse_sp_crack02b(filename,frame_n,varargin)
     %
     % 'S2E_conversion': file that converts stresses to energy density
     %
+    % 'm_file': mechanical data (xls file) generated recalc_lambda fcn
+    %
 %% Parse input variables
 
 narginchk(1,inf);%check the number of input values
@@ -129,6 +136,7 @@ params.addParameter('map_value','stress');
 params.addParameter('calc_true_stress',0,@(x) islogical(x)|x==1|x==0);
 params.addParameter('true_stress_mat','',@(x) ischar(x));
 params.addParameter('corr_factor',1,@(x) isnumeric(x));
+params.addParameter('m_file',[],@(x) ischar(x));
 params.parse(varargin{:});
 
 %Extract out values from parsed input
@@ -157,12 +165,39 @@ map_value=params.Results.map_value;
 calc_ts=params.Results.calc_true_stress;
 ts_mat=params.Results.true_stress_mat;
 corr_factor=params.Results.corr_factor;
+m_file=params.Results.m_file;
 
 if video_mode==1
     visible='off';
 else
     visible='on';
 end
+
+% extract stress strain data
+if ~isempty(m_file)
+    [num,txt,raw]=xlsread(m_file);
+    
+    %get stress value
+    k=find(strcmp(txt,'Stress (MPa)'));
+    [kr,kc]=ind2sub(size(txt),k);
+    m_stress=[raw{kr+1:end,kc}]';
+    
+    %get time value
+    k=find(strcmp(txt,'Time (s)'));
+    [kr,kc]=ind2sub(size(txt),k);
+    m_time=[raw{kr+1:end,kc}]';
+    
+    %get lambda value
+    k=find(strcmp(txt,'Lambda'));
+    [kr,kc]=ind2sub(size(txt),k);
+    m_lam=[raw{kr+1:end,kc}]';
+    
+    %get abs frame number
+    k=find(strcmp(txt,'frame #'));
+    [kr,kc]=ind2sub(size(txt),k);
+    frame_idx=[raw{kr+1:end,kc}]';
+end
+ii_fn=find(frame_idx==frame_n);
 
 %% LOAD VIDEO AND FITS
 disp(['fcn performing on frame: ',num2str(frame_n)]);
@@ -361,13 +396,13 @@ if stress_calc==1
     end
     
     % load mat file needed to convert nominal stress to energy density
-    G2E=load(S2E_conversion);
+    S2E=load(S2E_conversion);
     
     % process loading points
     for dum=1:numel(m3)
         ii=d_index(m3(dum));%index of BCC pt closest to loading curve
         m3_s(dum)=polyval(LFF.stressvBCC,BCC_load(ii));%nominal stress in MPa
-        m3_E(dum)=spline(G2E.stress,G2E.E,m3_s(dum));%energy density in MJ/m^3
+        m3_E(dum)=spline(S2E.stress,S2E.E,m3_s(dum));%energy density in MJ/m^3
         
         if calc_ts==1%det. true stress (MPa) based on correl. w/ nominal stress
             m3_ts(dum)=TS_NS(m3_s(dum));%true stress in MPa
@@ -560,6 +595,8 @@ if stress_calc==1
     end
     
     zdata=px_coord2image(IA(m3,6),IA(m3,7),m3_m,size(ref_corr));
+    far_field=nanmean(nanmean(zdata(:,end-10:end)));
+    disp(['far field stress (MPa): ',num2str(far_field)]);
     surf(f6.s1,zdata);
     cmap=jet(256);
     colormap(f6.s1,cmap);
@@ -571,6 +608,14 @@ if stress_calc==1
     text(f6.s1,10+Ires/2,12,'1 mm','verticalalignment','bottom',...
         'horizontalalignment','center','fontname','Helvetica',...
         'fontsize',14);
+    text(f6.s1,10+Ires/2,24,['\lambda = ',num2str(m_lam(ii_fn),2)],...
+        'verticalalignment','bottom',...
+        'horizontalalignment','center','fontname','Helvetica',...
+        'fontsize',14);
+%     text(f6.s1,10+Ires/2,36,['\sigma_n = ',num2str(m_stress(ii_fn),2),' MPa'],...
+%         'verticalalignment','bottom',...
+%         'horizontalalignment','center','fontname','Helvetica',...
+%         'fontsize',14);
     
     center_axes(f6.s1,'margins',5);
 end

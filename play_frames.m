@@ -2,11 +2,6 @@ function play_frames(mov,varargin)
 % Author: Joshua Yeh
 % Date created: 2017/11/16
 %
-%% SYNTAX
-% play_frames(mov)
-% play_frames(mov,pause_time)
-% play_frames(moc,pause_time,flag)
-% 
 %% DESCRIPTION
 % The purpose of this function is to accept a mov structure variable
 % (output from the extract_frame function) and browse through the frames in
@@ -15,21 +10,30 @@ function play_frames(mov,varargin)
 % simple GUI).
 % 
 %% INPUT VARIABLES
-% mov: a structure variable (output from the extract_frame function)
-% pause_time: the amount of time (s) to pause between displaying each frame
-% flag: a flag variables that determines whether to play through the frames
-% when the function is running (1 = play, 0 = don't play).
+% 
+% 'mov': movie structure generated from the extract_frames fcn
+% 
+% NAME PAIR ARGUMENTS: RGB_analysis(...'<fieldname>',<value>)
+% 
+% 'pause_time': the amount of time (s) to pause between displaying each
+% frame
+% 
+% 'flag': a flag variables that determines whether to play through the
+% frames when the function is running (1 = play, 0 = don't play).
+% 
 %%
 % Parse input variables
+narginchk(1,inf);
+params=inputParser;
+params.CaseSensitive=false;
+params.addParameter('pause_time',0,@(x) isnumeric(x));
+params.addParameter('flag',0,@(x) x==0|x==1);
+params.addParameter('rotate',0,@(x) isnumeric(x));
+params.parse(varargin{:});
 
-switch nargin
-    case 1
-        pause_time=0;
-        flag=0;%don't play through frames
-    case 2
-        pause_time=varargin{1};
-        flag=1;%play through frames
-end
+pause_time=params.Results.pause_time;
+flag=params.Results.pause_time;
+rot=params.Results.rotate;
 
 % Create a figure window
 handles=guidata(figure(100));
@@ -38,8 +42,15 @@ handles.f1.s1=axes;
 handles.virgin_flag=1;
 
 %Show each frame
-for dum=1:size(mov,2)    
-    imagesc(handles.f1.s1,mov(dum).CData);
+for dum=1:size(mov,2)
+    frame=mov(dum).CData;
+    
+    %check to see if frame needs to be rotated
+    if rot~=0
+        frame=imrotate(frame,rot);
+    end
+    
+    imagesc(handles.f1.s1,frame);
     axis image;
     
     %Include absolute frame number and timestamp
@@ -68,6 +79,7 @@ handles.mov=mov;%store mov var structure into the handles structure
 handles.current=mov(dum).abs_frame_index;%store the current frame number
 handles.xlim0=handles.f1.s1.XLim;
 handles.ylim0=handles.f1.s1.YLim;
+handles.rot=rot;
 guidata(handles.f1.f,handles);%create handles structure for the figure window
 
 % This is the callback fcn for handles.prev pushbutton
@@ -86,10 +98,16 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
         cla(handles.f1.s1);
         abs_frame_index=[handles.mov(:).abs_frame_index];%abs frame index
         ii=find(abs_frame_index==handles.current);
-        handles.current=abs_frame_index(ii-1);%go back one frame        
+        handles.current=abs_frame_index(ii-1);%go back one frame    
+        
+        frame=handles.mov(ii-1).CData;
+        %check to see if frame needs to be rotated
+        if handles.rot~=0
+            frame=imrotate(frame,handles.rot);
+        end
         
         %show frame
-        imagesc(handles.f1.s1,handles.mov(ii-1).CData);        
+        imagesc(handles.f1.s1,frame);        
         
         % set the xlim and ylim to original values
         if handles.virgin_flag==0
@@ -125,8 +143,14 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
         ii=find(abs_frame_index==handles.current);
         handles.current=abs_frame_index(ii+1);%go forward one frame        
 
+        frame=handles.mov(ii+1).CData;
+        %check to see if frame needs to be rotated
+        if handles.rot~=0
+            frame=imrotate(frame,handles.rot);
+        end
+        
         %show frame
-        imagesc(handles.f1.s1,handles.mov(ii+1).CData);        
+        imagesc(handles.f1.s1,frame);        
         
         % set the xlim and ylim to original values
         if handles.virgin_flag==0

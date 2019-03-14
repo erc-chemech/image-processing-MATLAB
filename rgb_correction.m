@@ -83,6 +83,7 @@ end
 
 % convert I and ref to double
 I=double(I);
+I_corr=I;
 ref=double(ref);
 dc=[{'R'} {'G'} {'B'}];
 flag_D=0;
@@ -99,13 +100,13 @@ switch type
             offset=thresh./pd.mu;
             
             % Apply correction
-            I_corr(:,:,dum)=channel.*offset;
+            I_corr(:,:,dum)=I(:,:,dum).*offset;
             if flag==1
-                ii=find(I_corr(:)>255);
-                I_corr(ii)=255;
-                if isempty(ii)==0&&silence==0
+%                 ii=find(I_corr(:)>255);
+                I_corr(I_corr(:)>255)=255;
+                if sum(I_corr(:)>255)>0&&silence==0
                     disp(['# of saturated pixels (',dc{dum},...
-                        '): ',num2str(length(ii)),', mu: ',...
+                        '): ',num2str(length(sum(I_corr(:)>255))),', mu: ',...
                         num2str(pd.mu)]);
                     flag_D=1;
                 end

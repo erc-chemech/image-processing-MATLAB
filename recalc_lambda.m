@@ -25,6 +25,9 @@ function recalc_lambda(filename,frames,top_roi,bot_roi,varargin)
 % 'xlsfile': exported excel file name
 % 
 % 'm_file': mechanical data obtained from the Instron
+% 
+% 'rotate': apply rotation to the frame in degrees
+% 
 %% output variables
 % Note: variables in this fcn will be outputted into the caller workspace.
 % Also, the time, lambda (extension ratio), and stress will will exported
@@ -40,11 +43,13 @@ params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('xlsfile',[],@(x) ischar(x));
 params.addParameter('m_file',[],@(x) isempty(x)|ischar(x));
+params.addParameter('rotate',0,@(x) isnumeric(x));
 params.parse(varargin{:});
 
 % Extract out values from parsed input
 xlsfile=params.Results.xlsfile;
 m_file=params.Results.m_file;
+rot=params.Results.rotate;
 
 % Turn off hardware acceleration
 matlab.video.read.UseHardwareAcceleration('off')
@@ -120,6 +125,11 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         time_store(count2)=Vidobj.CurrentTime-start;%rel. time
         
         frame=mov(1).CData;%orginal frame
+        
+        % if user defines a rotation or rotation is non-zero, rotate frame
+        if rot~=0
+            frame=imrotate(frame,rot);
+        end
 
         % Define top portion of the frame
         top0=frame(top_roi(1):top_roi(2),top_roi(3):top_roi(4),:);
@@ -136,11 +146,7 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         centers_t=stats_top(kk).Centroid;%center coord in top_roi coord system
         centers0_t=[centers_t(:,1)+top_offsetx centers_t(:,2)+top_offsety];
         top_dot(count2,:)=centers0_t;%store the centroid info in array
-        PixelList_t=stats_top.PixelList;
-        try
-            PixelList_t=PixelList_t{1};
-        end
-        PixelList0_t=[PixelList_t(:,1)+top_offsetx PixelList_t(:,2)+top_offsety];
+        PixelList_t=stats_top(kk).PixelList;
 
         % Define bottom portion of the frame
         bot0=frame(bot_roi(1):bot_roi(2),bot_roi(3):bot_roi(4),:);
@@ -157,11 +163,7 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         centers_b=stats_bot(kk).Centroid;%center coordinates in top_roi coord system
         centers0_b=[centers_b(:,1)+bot_offsetx centers_b(:,2)+bot_offsety];
         bot_dot(count2,:)=centers0_b;%store the centroid info in array
-        PixelList_b=stats_bot.PixelList;
-        try
-            PixelList_b=PixelList_b{1};
-        end
-        PixelList0_b=[PixelList_b(:,1)+bot_offsetx PixelList_b(:,2)+bot_offsety];
+        PixelList_b=stats_bot(kk).PixelList;
 
         % Calculate pixel distance between the top and bot dots
         dist(count2)=abs(bot_dot(count2,2)-top_dot(count2,2));
@@ -228,6 +230,9 @@ if ~isempty(m_file)
 
     %get time value
     k=find(strcmp(txt,'(sec)'));
+    if isempty(k)
+        k=find(strcmp(txt,'(s)'));
+    end
     [~,kc]=ind2sub(size(txt),k);
     m_time=num(:,kc);
 
@@ -238,9 +243,9 @@ else
 end
 
 %export results in excel spreadsheet
-data=[time_store,lambda,stress_q];
-data=mat2cell(data,ones(size(data,1),1),[1 1 1]);
-headers={'Time (s)','Lambda','Stress (MPa)'};
+data=[time_store,lambda,stress_q,frames'];
+data=mat2cell(data,ones(size(data,1),1),[1 1 1 1]);
+headers={'Time (s)','Lambda','Stress (MPa)','frame #'};
 
 if isempty(xlsfile)
     [filepath,name,ext] = fileparts(filename);
