@@ -100,7 +100,7 @@ center_axes(f2.s1,'margins',10);
 
 [~,name,~]=fileparts(filename);%get basename of image filename
 
-I=import_tiff_stack(filename,1,'skip',1,'silence',1);% import image
+% I=import_tiff_stack(filename,1,'skip',1,'silence',1);% import image
 plane_initial=(I.tiff_stack)./IH;%flat field correction
 plane_initial(IH(:)<T1)=0;%remove overcorrect areas, defined by T1
 
