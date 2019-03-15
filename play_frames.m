@@ -186,9 +186,16 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
         abs_frame_index=[handles.mov(:).abs_frame_index];%abs frame index
         handles.current=n;%update current frame
         
-        %show frame
         ii=find(abs_frame_index==handles.current);%locate frame index
-        imagesc(handles.f1.s1,handles.mov(ii).CData);        
+        
+        frame=handles.mov(ii).CData;
+        %check to see if frame needs to be rotated
+        if handles.rot~=0
+            frame=imrotate(frame,handles.rot);
+        end
+        
+        %show frame
+        imagesc(handles.f1.s1,frame);   
         
         % set the xlim and ylim to original values
         if handles.virgin_flag==0

@@ -47,7 +47,7 @@ function parse_sp_crack02b(filename,frame_n,varargin)
     % 'RCC_thresh': percentile (0 to 1) threshold distinguishing signal
     % from noise
     %
-    % 'BCC_thresh': percentil (0 to 1) threshold distinguishing sigal from
+    % 'BCC_thresh': percentile (0 to 1) threshold distinguishing sigal from
     % noise
     %
     % 'res': this parameter controls the hexagon size for the honeycomb
@@ -100,6 +100,8 @@ function parse_sp_crack02b(filename,frame_n,varargin)
     %
     % 'm_file': mechanical data (xls file) generated recalc_lambda fcn
     %
+    % 'rotate': rotate frames in degrees
+    % 
 %% Parse input variables
 
 narginchk(1,inf);%check the number of input values
@@ -137,6 +139,7 @@ params.addParameter('calc_true_stress',0,@(x) islogical(x)|x==1|x==0);
 params.addParameter('true_stress_mat','',@(x) ischar(x));
 params.addParameter('corr_factor',1,@(x) isnumeric(x));
 params.addParameter('m_file',[],@(x) ischar(x));
+params.addParameter('rotate',0,@(x) isnumeric(x));
 params.parse(varargin{:});
 
 %Extract out values from parsed input
@@ -166,6 +169,7 @@ calc_ts=params.Results.calc_true_stress;
 ts_mat=params.Results.true_stress_mat;
 corr_factor=params.Results.corr_factor;
 m_file=params.Results.m_file;
+rot=params.Results.rotate;
 
 if video_mode==1
     visible='off';
@@ -196,8 +200,9 @@ if ~isempty(m_file)
     k=find(strcmp(txt,'frame #'));
     [kr,kc]=ind2sub(size(txt),k);
     frame_idx=[raw{kr+1:end,kc}]';
+    ii_fn=find(frame_idx==frame_n);
 end
-ii_fn=find(frame_idx==frame_n);
+
 
 %% LOAD VIDEO AND FITS
 disp(['fcn performing on frame: ',num2str(frame_n)]);
@@ -227,12 +232,21 @@ end
 
 %% PERFORM COLOR CORRECTIONS
 
+% Check to see if the frame needs to be rotated
+if rot~=0
+    frame01=imrotate(frame(1).CData,rot);
+    frame02=imrotate(frame(2).CData,rot);
+else
+    frame01=frame(1).CData;
+    frame02=frame(2).CData;
+end
+
 % Crop our ROI
-subimage=frame(2).CData(ROI(1):ROI(2),ROI(3):ROI(4),:);
-ref=frame(1).CData(ref_ROI(1):ref_ROI(2),ref_ROI(3):ref_ROI(4),:);
+subimage=frame02(ROI(1):ROI(2),ROI(3):ROI(4),:);
+ref=frame01(ref_ROI(1):ref_ROI(2),ref_ROI(3):ref_ROI(4),:);
 
 % Define white reference area
-white_ref=frame(1).CData(white_ref_ROI(1):white_ref_ROI(2),...
+white_ref=frame01(white_ref_ROI(1):white_ref_ROI(2),...
     white_ref_ROI(3):white_ref_ROI(4),:);
 
 % Apply color correction
@@ -467,17 +481,19 @@ title(f2.s5,'ref intensities');
 title(f2.s6,'frame intensities');
 set(f2.s3,'xlim',[-0.03 0.03]);
 set(f2.s4,'xlim',[-0.03 0.03]);
-
-histogram(f2.s1,ref_corr(:,:,1),'facecolor','r','facealpha',0.5);
-histogram(f2.s1,ref_corr(:,:,2),'facecolor','g','facealpha',0.5);
-histogram(f2.s1,ref_corr(:,:,3),'facecolor','b','facealpha',0.5);
-histogram(f2.s2,frame_corr2(:,:,1),'facecolor','r','facealpha',0.5);
-histogram(f2.s2,frame_corr2(:,:,2),'facecolor','g','facealpha',0.5);
-histogram(f2.s2,frame_corr2(:,:,3),'facecolor','b','facealpha',0.5);
+edges=0:2:256;
+histogram(f2.s1,ref_corr(:,:,1),edges,'facecolor','r','facealpha',0.5);
+histogram(f2.s1,ref_corr(:,:,2),edges,'facecolor','g','facealpha',0.5);
+histogram(f2.s1,ref_corr(:,:,3),edges,'facecolor','b','facealpha',0.5);
+histogram(f2.s2,frame_corr2(:,:,1),edges,'facecolor','r','facealpha',0.5);
+histogram(f2.s2,frame_corr2(:,:,2),edges,'facecolor','g','facealpha',0.5);
+histogram(f2.s2,frame_corr2(:,:,3),edges,'facecolor','b','facealpha',0.5);
 histogram(f2.s3,BCC0(:),'facecolor','b','facealpha',0.5);
 histogram(f2.s3,RCC0(:),'facecolor','r','facealpha',0.5);
+histogram(f2.s3,GCC0(:),'facecolor','g','facealpha',0.5);
 histogram(f2.s4,BCC(:),'facecolor','b','facealpha',0.5);
 histogram(f2.s4,RCC(:),'facecolor','r','facealpha',0.5);
+histogram(f2.s4,GCC(:),'facecolor','g','facealpha',0.5);
 histogram(f2.s5,ref_corr_sum(:));
 histogram(f2.s6,frame_corr_sum(:));
 
@@ -596,7 +612,18 @@ if stress_calc==1
     
     zdata=px_coord2image(IA(m3,6),IA(m3,7),m3_m,size(ref_corr));
     far_field=nanmean(nanmean(zdata(:,end-10:end)));
-    disp(['far field stress (MPa): ',num2str(far_field)]);
+    
+    if ~isempty(m_file)
+        notched_stress=m_stress(ii_fn);
+        disp(['far field stress (MPa): ',num2str(far_field)]);
+        disp(['notched stress (MPa): ',num2str(notched_stress)]);
+        try
+            ssfit=load(LoadFitFile,'ssfit');
+            disp(['unnotched stress (MPa): ',num2str(ssfit.ssfit(m_lam(ii_fn)))]);
+        catch
+            disp('unable to load unnotched stress value');
+        end
+    end
     surf(f6.s1,zdata);
     cmap=jet(256);
     colormap(f6.s1,cmap);
@@ -608,14 +635,17 @@ if stress_calc==1
     text(f6.s1,10+Ires/2,12,'1 mm','verticalalignment','bottom',...
         'horizontalalignment','center','fontname','Helvetica',...
         'fontsize',14);
-    text(f6.s1,10+Ires/2,24,['\lambda = ',num2str(m_lam(ii_fn),2)],...
-        'verticalalignment','bottom',...
-        'horizontalalignment','center','fontname','Helvetica',...
-        'fontsize',14);
-%     text(f6.s1,10+Ires/2,36,['\sigma_n = ',num2str(m_stress(ii_fn),2),' MPa'],...
-%         'verticalalignment','bottom',...
-%         'horizontalalignment','center','fontname','Helvetica',...
-%         'fontsize',14);
+    
+    if ~isempty(m_file)
+        text(f6.s1,10+Ires/2,24,['\lambda = ',num2str(m_lam(ii_fn),2)],...
+            'verticalalignment','bottom',...
+            'horizontalalignment','center','fontname','Helvetica',...
+            'fontsize',14);
+    %     text(f6.s1,10+Ires/2,36,['\sigma_n = ',num2str(m_stress(ii_fn),2),' MPa'],...
+    %         'verticalalignment','bottom',...
+    %         'horizontalalignment','center','fontname','Helvetica',...
+    %         'fontsize',14);
+    end
     
     center_axes(f6.s1,'margins',5);
 end
