@@ -252,8 +252,12 @@ if ~isempty(cut_i)
 else%if all intensities are above thresh noise
     cut_i=numel(improfiles_mean);
 end
+
 Hs=linspace(0,H,size(improfiles2,2));%integration dist. from edge (um)
 SI=cumsum(improfiles_mean(1:cut_i),2);%integrated intensity
+if isempty(SI)
+    disp('Something went wrong with the integration!');
+end
 
 %% store the results
 results.Hs=Hs(1:cut_i);%integration dist. from edge (um)
@@ -284,7 +288,7 @@ center_axes(f3.s1);
 
 % plot avg intensity profile
 f4=my_fig(4);
-plot(f4.s1,results.Hs,results.improfiles_avg);
+plot(f4.s1,Hs,improfiles_mean);
 xylabels(f4.s1,'distance from crack edge (\mum)','intensity (a.u.)');
 center_axes(f4.s1);
 
