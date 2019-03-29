@@ -9,6 +9,8 @@ params.addParameter('max',100,@(x) isnumeric(x));
 params.addParameter('color','k');
 params.addParameter('EdgeColor','none');
 params.addParameter('dn',[]);
+params.addParameter('xEdges',[],@(x) isnumeric(x));
+params.addParameter('yEdges',[],@(x) isnumeric(x));
 params.parse(varargin{:});
 
 % Extract out balues from parsed input
@@ -28,8 +30,16 @@ if ~ischar(res)
         ye=linspace(ax.YLim(1),ax.YLim(2),100);
         res=mean([xe(2)-xe(1) ye(2)-ye(1)]);
     end
-    xEdges=ax.XLim(1):res:ax.XLim(2);%x edges
-    yEdges=ax.YLim(1):res:ax.YLim(2);%y edges
+    if isempty(params.Results.xEdges)
+        xEdges=ax.XLim(1):res:ax.XLim(2);%x edges
+    else
+        xEdges=params.Results.xEdges(1):res:params.Results.xEdges(2);
+    end
+    if isempty(params.Results.yEdges)
+        yEdges=ax.YLim(1):res:ax.YLim(2);%y edges
+    else
+        yEdges=params.Results.yEdges(1):res:params.Results.yEdges(2);
+    end
     out=honeycomb(xx,yy,'ax',ax,'xEdges',xEdges','yEdges',yEdges');
 elseif strcmp(res,'auto')
     out=honeycomb(xx,yy,'ax',ax);

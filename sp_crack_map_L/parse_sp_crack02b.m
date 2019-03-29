@@ -508,19 +508,19 @@ f3.f.Position(4)=565;
 f3.s2=axes;
 set(f3.s2,'position',[0.8 0.7 0.1 0.3]);
 set(f3.f,'name','Color mapping of reference sample area');
-xylabels(f3.s1,'Blue chromatic change','Red chromatic change');
+xylabels(f3.s1,'blue chromatic change','red chromatic change');
 
 plot3(f3.s1,BCC_load,RCC_load,...
     ones(1,numel(BCC_load)).*1000,'k--');
-set(f3.s1,'xlim',[0 0.1],'ylim',[-0.1 0]);
 plot3(f3.s1,...
-    [0 thresh_BCC thresh_BCC 0 0],...
-    [0 0 thresh_RCC thresh_RCC 0 ],...
-    ones(1,5).*1000,'r-');
+    [0 thresh_BCC thresh_BCC],...
+    [thresh_RCC thresh_RCC 0],...
+    ones(1,3).*1000,'r-','linewidth',2);
 
 %transform chromatic datapoints to 2d histogram array
 f3.surf1=my_honeycomb(f3.s1,BCC0(:),RCC0(:),'res',res,...
-    'dn','reference','max',max1);
+    'dn','reference','max',max1,'xEdges',[-0.1 0.1],...
+    'yEdges',[-0.1 0.1]);
 center_axes(f3.s1);
 f3.c3=alphaColorbar(f3.s1,f3.surf1,'clab','Counts');
 
@@ -530,6 +530,8 @@ axis(f3.s2,'image');
 set(f3.s2,'box','off','xcolor','none','ycolor','none','xtick',[],...
     'ytick',[]);
 
+axis(f3.s1,'image');
+set(f3.s1,'xlim',[0 0.01],'ylim',[-0.01 0]);
 
 %% %%%%%%%%%%%%%%%%%%% figure 4 %%%%%%%%%%%%%%%%%%%%%
 
@@ -682,6 +684,23 @@ if stress_calc==1
     f7.c1.YLabel.FontSize=f7.s2.FontSize;
     set(f7.c1,'box','off','tickdir','both','limits',climm);
     
+    % Plot scalebar
+    plot(f7.s1,[10 10+Ires],[10 10],'k-','linewidth',2);
+    text(f7.s1,10+Ires/2,12,'1 mm','verticalalignment','bottom',...
+        'horizontalalignment','center','fontname','Helvetica',...
+        'fontsize',14);
+    
+    if ~isempty(m_file)
+        text(f7.s1,10+Ires/2,24,['\lambda = ',num2str(m_lam(ii_fn),2)],...
+            'verticalalignment','bottom',...
+            'horizontalalignment','center','fontname','Helvetica',...
+            'fontsize',14);
+    %     text(f6.s1,10+Ires/2,36,['\sigma_n = ',num2str(m_stress(ii_fn),2),' MPa'],...
+    %         'verticalalignment','bottom',...
+    %         'horizontalalignment','center','fontname','Helvetica',...
+    %         'fontsize',14);
+    end
+    
     % chromatic-stress mapping
     copyobj(get(f4.s1,'children'),f7.s2);
     f7.s2.Position=[0.6047 0.4125 0.3447 0.5508];
@@ -694,6 +713,7 @@ if stress_calc==1
     f7.c2.TickDir='out';
     
     set(f7.s2,'xlim',[0 0.1],'ylim',[-0.1 0]);
+    axis(f7.s2,'image');
     
 end
 

@@ -28,6 +28,9 @@ function recalc_lambda(filename,frames,top_roi,bot_roi,varargin)
 % 
 % 'rotate': apply rotation to the frame in degrees
 % 
+% 'initial_dist': initial distance between the top and bottom feature or
+% dust particle (pxs)
+% 
 %% output variables
 % Note: variables in this fcn will be outputted into the caller workspace.
 % Also, the time, lambda (extension ratio), and stress will will exported
@@ -44,12 +47,14 @@ params.CaseSensitive=false;
 params.addParameter('xlsfile',[],@(x) ischar(x));
 params.addParameter('m_file',[],@(x) isempty(x)|ischar(x));
 params.addParameter('rotate',0,@(x) isnumeric(x));
+params.addParameter('initial_dist',[],@(x) isnumeric(x));
 params.parse(varargin{:});
 
 % Extract out values from parsed input
 xlsfile=params.Results.xlsfile;
 m_file=params.Results.m_file;
 rot=params.Results.rotate;
+initial_dist=params.Results.initial_dist;
 
 % Turn off hardware acceleration
 matlab.video.read.UseHardwareAcceleration('off')
@@ -169,7 +174,11 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         dist(count2)=abs(bot_dot(count2,2)-top_dot(count2,2));
         
         % calculate extension ratio
-        lambda=dist./dist(1);
+        if isempty(initial_dist)
+            lambda=dist./dist(1);
+        else
+            lambda=dist./initial_dist;
+        end
 
         % update ROI for top and bot
         if count2>1
