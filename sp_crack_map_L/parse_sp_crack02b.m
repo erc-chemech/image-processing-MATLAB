@@ -726,8 +726,23 @@ end
 %% %%%%%%%%%%%%%%%%%%% figure 8 %%%%%%%%%%%%%%%%%%%%%
 
 f8=my_fig(8);
-copyobj(get(f4.s1,'children'),f8.s1);
 set(f8.s1,'xlim',[0 0.1],'ylim',[-0.08 0]);
+
+plot3(f8.s1,BCC_load,RCC_load,...
+    ones(1,numel(BCC_load)).*1000,'k--');
+
+% Transform chromatic datapoints to 2d histogram array (m2)
+f8.N_m3=my_honeycomb(f8.s1,BCC(m2),RCC(m2),'max',max1,'res',res,...
+    'dn','background');
+
+% % Transform chromatic datapoints to 2d histogram array (m0)
+f8.N_m3=my_honeycomb(f8.s1,BCC(m0),RCC(m0),'max',max1,'res',res,...
+    'dn','background');
+
+% Transform chromatic datapoints to 2d histogram array (m3)
+f8.N_m3=my_honeycomb(f8.s1,BCC(m3),RCC(m3),'max',max1,...
+    'color',[255 186 0]./255,'res',res,'dn','loading');
+
 center_axes(f8.s1);
 
 %% %%%%%%%%%%%%%%%%%%% figure 9 %%%%%%%%%%%%%%%%%%%%%

@@ -15,10 +15,11 @@ function RGB_analysis(filename,frames,varargin)
 % 
 % NAME PAIR ARGUMENTS: RGB_analysis(...'<fieldname>',<value>)
 % 
-% 'ROI': region of interest within the original frame
+% 'ROI': region of interest within the original frame (prior to frame
+% rotation)
 % 
-% 'white_ROI': region of interest within the cropped ROI representing the
-% reference white region
+% 'white_ROI': region of interest with respect to the original (uncropped)
+% frame prior to rotation
 % 
 % 'black_thresh': threshold value that identifies the dark areas
 % 
@@ -74,7 +75,7 @@ B_mean=nan(2e4,1);%B-ratio mean
 R_std=nan(2e4,1);%R-ratio stdev
 G_std=nan(2e4,1);%R-ratio stdev
 B_std=nan(2e4,1);%R-ratio stdev
-time_store=nan(2e4,1);% time associated with the frame
+time_store=nan(2e4,1);% time associated with the video frame
 lambda=nan(2e4,1);%extension ratio
 dist=nan(2e4,1);%distance between the black lines
 
@@ -152,9 +153,9 @@ mov(1).CData=[];%preallocate structure array
 
 % flag1=1;% This flag controls the condition in which to continue while loop
 count1=1;% Counter counting the iteration for each while loop
-count2=1;% Counter counting the iteration # in the frame array being looped
-check=0;
-bt=nan(1,4);
+count2=1;% Counter counting the iteration # in 'frame' array being looped
+check=0;% a flag for checking if frame is new (0 for dupli. 1 for new)
+% bt=nan(1,4);
 while hasFrame(Vidobj)&&count1<=max(frames)
     
     % Import current frame
@@ -165,12 +166,14 @@ while hasFrame(Vidobj)&&count1<=max(frames)
     % Prevent processing of duplicate frames
     if count1>1
         if isequal(prev,mov(1).CData)&&count2>1
-            check=0;
+            check=0;% mark as duplicate frame
             disp('Skipped duplicate frame');
             
         else
-            check=1;
+            check=1;% mark as a new frame
         end
+    elseif count1==1
+        check=1;% for the 1st frame, toggle check as 1 (new frame)
     end
     prev=mov(1).CData;
     
@@ -203,28 +206,29 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         end
         
         % Define white reference area
-        white=frame(white_ROI(1):white_ROI(2),...
+        white=mov(1).CData(white_ROI(1):white_ROI(2),...
             white_ROI(3):white_ROI(4),:);
         
         % Apply color correction
         frame_corr=rgb_correction(frame,white,'simple',200,'flag',0);
         
-        channel1=sum(frame_corr(:,v_divider-5:v_divider+5,:),3);%intensity channel
-        channel1=nanmean(channel1,2);
+        % define channel1, which represents a subimage within 'frame'
+        % defined by 5 pixels to the left and to the right of the vertical
+        % dividing line. The subimage is then summed in the 3rd dimension.
+        % In other words, it is an intensity array.
+        channel1=sum(frame_corr(:,v_divider-5:v_divider+5,:),3);
+        channel1b=nanmean(channel1,2);%take the mean in the col direction
         
-        ii1=find(channel1(:)<=black_thresh);
-%         [r1,~]=ind2sub(size(channel1),ii1);%extract row
-%         [r1,~]=sort(r1);%sort the rows in asending order
+        % find indices that are equal or below the black_thresh value
+        ii1=find(channel1b(:)<=black_thresh);
 
         % Find top boundary
         ii3=find(ii1<h_divider,1,'last');
         top_black=ii1(ii3)+1;
-%         bt(1)=channel1(ii3);
 
         % Find bottom boundary
         ii3=find(ii1>h_divider,1,'first');
         bottom_black=ii1(ii3)-1;
-%         bt(2)=channel1(ii3);
         
         % Calculate distance between top and bottom
         dist(count2)=abs(top_black-bottom_black);
@@ -235,7 +239,6 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         % Define subimage defined by top and bottom boundariers that will be
         % used to find the left and right boundaries
         b_subimage=sum(frame_corr(top_black-10:bottom_black+10,:,:),3);%intensity channel
-%         b_subimage=channel1(top_black-10:bottom_black+10,:);
 
         % Find indices corresponding to pixels falling wihtin threshold of the
         % subimage
@@ -247,12 +250,12 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         % Find left boundary
         ii3=find(c1<=v_divider,1,'first');
         left_black=c1(ii3)+border_offset;
-        bt(3)=b_subimage(ii3);
+%         bt(3)=b_subimage(ii3);
 
         % Find right boundary
         ii3=find(c1>=v_divider,1,'last');
         right_black=c1(ii3)-border_offset;
-        bt(4)=b_subimage(ii3);
+%         bt(4)=b_subimage(ii3);
 
         %Define subimage that will be used to calculate statistics
         subimage=frame_corr(top_black+border_offset:bottom_black-border_offset,...
@@ -280,9 +283,6 @@ while hasFrame(Vidobj)&&count1<=max(frames)
             else            
                 v_divider=vd_test;
             end
-            
-%             black_thresh=mean(bt(1:2));
-%             bt
 
             % Calculate the Delta RGB ratio
             RCC=R_mean-nanmean(R_mean(1:5));
@@ -353,7 +353,9 @@ RCC=RCC(~isnan(time_store));
 GCC=GCC(~isnan(time_store));
 BCC=BCC(~isnan(time_store));
 lambda=lambda(~isnan(time_store));
-stress_q=stress_q(~isnan(time_store));
+if ~isempty(m_file)
+    stress_q=stress_q(~isnan(time_store));
+end
 time_store=time_store(~isnan(time_store));
 
 % export fcn workspace to caller workspace
@@ -378,6 +380,7 @@ end
 disp(['Finished on: ',datestr(clock)])
 disp(['results saved to: ',export_filename]);
 
+%% USEFUL FCNs
 function out_var(varargin)
 % This function output the function variable space to the base workspace
 for dum=1:numel(varargin)
