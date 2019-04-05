@@ -82,7 +82,7 @@ dist=nan(2e4,1);%distance between the black lines
 % extract mechanical data
 disp('loading mechanical data');
 if ~isempty(m_file)
-    [num,txt,raw]=xlsread(m_file);
+    [~,txt,raw]=xlsread(m_file);
     
     %get stress value
     k=find(strcmp(txt,'(MPa)'));

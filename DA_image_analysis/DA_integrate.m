@@ -22,9 +22,7 @@ function results=DA_integrate(filename,ffmat,dmap,varargin)
 % 
 % 'T1': threshold value that defines the region where stats are done based
 % on the flat-field correction array
-% 
-% 'optical_thick': optical slice thickness of image in microns
-% 
+%
 % 'res_p': length of the perpendicular line profile rel. to the edge in
 % pxs
 % 
@@ -47,7 +45,6 @@ params.CaseSensitive=false;
 params.addParameter('calfile',[],@(x) ischar(x));
 params.addParameter('w2',2,@(x) isnumeric(x));
 params.addParameter('T1',0.4,@(x) isnumeric(x));
-params.addParameter('optical_thick',12.04,@(x) isnumeric(x));
 params.addParameter('res_p',150,@(x) isnumeric(x));
 params.addParameter('n_cuts',150,@(x) isnumeric(x));
 params.addParameter('thresh',188,@(x) isnumeric(x));
@@ -61,7 +58,6 @@ params.parse(varargin{:});
 calfile=params.Results.calfile;
 w2=params.Results.w2;
 T1=params.Results.T1;
-optical_thick=params.Results.optical_thick;
 res_p=params.Results.res_p;
 n_cuts=params.Results.n_cuts;
 thresh=params.Results.thresh;
@@ -75,8 +71,6 @@ I=import_tiff_stack(filename,1,'skip',1,'silence',1);
 % define additional variables based on parsed inputs
 H=I.res*res_p;% length of line profile in um
 LE=I.res*n_cuts;% target length of edge
-
-results.params=params;%store the parameters of the analysis in the results
 
 % Load flat-field correction map
 load(ffmat,'IH');
@@ -99,13 +93,10 @@ center_axes(f1.s1,'margins',10);
 
 f2=my_fig(2);
 colormap(f2.s1,'bone');
-xylabels(f2.s1,'distance from edge (\mum)',...
-    'integrated intensity');
+xylabels(f2.s1,'distance from edge (\mum)','integrated intensity');
 center_axes(f2.s1,'margins',10);
 
 %% Perform image corrections
-
-[~,name,~]=fileparts(filename);%get basename of image filename
 
 % I=import_tiff_stack(filename,1,'skip',1,'silence',1);% import image
 plane_initial=(I.tiff_stack)./IH;%flat field correction
@@ -126,9 +117,8 @@ y=y-dy;
 
 % Performing 2D binning of current image
 [I1,A,B]=coord2image(x,y,intensity,w2,'mean');
-I0=I1;     I0(I0<0)=nan;
 I1=I1-thresh;%remove background threshold
-I1=medfilt2(I1,[3 3]);
+I1=medfilt2(I1,[3 3]);%2d median filter
 I1(I1<0)=nan;%set values below 0 as nan
 
 %% fit a linear line to straight edge
@@ -136,14 +126,11 @@ I1(I1<0)=nan;%set values below 0 as nan
 % Show the processed image
 cla(f1.s1);
 scatter(f1.s1,A(:),B(:),'.','cdata',I1(:));
-f1.s1.CLim=[0 4095];
-f1.s1.YDir='reverse';
+set(f1.s1,'clim',[0 4095],'ydir','reverse');
 
 % Binarize the image to prepare for linear edge fitting
-I2=zeros(size(I1));
-I2(I1>binarize_thresh)=1;
-y2=B(I1>binarize_thresh);%y coord of (um) intensities above threshold
 x2=A(I1>binarize_thresh);%x coord of (um) intensities above threshold
+y2=B(I1>binarize_thresh);%y coord of (um) intensities above threshold
 
 % fit a linear line using total least squares
 line_fit=polyfit(x2,y2,1);%first use linear least sq. as an initial guess
@@ -155,24 +142,24 @@ r2_fit2=polyval(line_fit,c3)';%corresp. y pos of fitted edge (higher res)
 slope=line_fit(1);%slope of the fitted line
 
 if strcmp(edge_detect,'auto')
-    
+    % show the edge line
+    plot3(f1.s1,x2,r2_fit,ones(size(x2)).*1e5,'r-','linewidth',2);
 elseif strcmp(edge_detect,'manual')
     drawnow;
     kk=find(x2>0&x2<nanmax(A(:))&r2_fit>0&r2_fit<nanmax(A(:)));
     edge_h=imline(f1.s1,[x2(kk(1)) r2_fit(kk(1));x2(kk(end)) r2_fit(kk(end))]);
     setColor(edge_h,'r');
-    
     figure(f1.f);
+    
     % Create dialogue button for manual edge line confirmation
     qf=figure;
-    qf.Position=[500 678 200 100];
-    qf.ToolBar='none';
+    set(qf,'position',[500 678 200 100],'toolbar','none');
     tb=uicontrol(qf,'position',[1 30 198 40],'string',...
         'Confirm edge line','value',0,'style','togglebutton');
     
     % wait for user to confirm edge selection
     waitfor(tb,'value',1);
-    delete(qf);
+    delete(qf);%delete confirmation window
     
     % get user define edge line position, slope, and y-intercept
     pos=getPosition(edge_h);
@@ -187,10 +174,8 @@ elseif strcmp(edge_detect,'manual')
     
 end
 
-% show the edge line
 set(f1.s1,'xlim',[0 850],'ylim',[0 850],'clim',[10 4095],...
     'ydir','reverse');
-plot3(f1.s1,x2,r2_fit,ones(size(x2)).*1e5,'r-','linewidth',2);
 
 % determine range along the edge to perform analysis
 kk3=knnsearch(r2_fit2,r_divide);
@@ -220,12 +205,12 @@ for cq=cqs
     phi=atand(perp_line_fit(1));%slope in degrees
     cq_end=H.*cosd(phi)+cq;%end x pos (um) of perpendicular line profile
 
-    % extract and store improfile
+    % extract and store improfile (intensity profile along line)
     xi=[cq cq_end];
     yi=polyval(perp_line_fit,xi);
     improfiles(count,:)=improfile(A,B,I1,xi,yi,res_p,'bicubic');
     
-    % show perpendicular line
+    % plot perpendicular line
     plot3(f1.s1,cq:cq_end,polyval(perp_line_fit,cq:cq_end),...
         ones(size(cq:cq_end)).*1e5,...
         'r-','linewidth',2);
@@ -266,7 +251,8 @@ results.SI=SI;%surface integrated intensity
 % Statistical calc.
 results.improfiles_avg=improfiles_mean(1:cut_i);%mean
 results.improfiles_std=improfiles_std(1:cut_i);%stdev
-results.improfiles=improfiles2;
+results.improfiles=improfiles2;%intensity profiles for each perpend. line
+results.params=params;%store the parameters of the analysis in the results
 
 % check to see if user provided calibration file
 if ~isempty(calfile)
