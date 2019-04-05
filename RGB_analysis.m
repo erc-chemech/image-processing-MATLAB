@@ -106,7 +106,7 @@ set(f1.s1,'fontsize',6,'ydir','reverse','box','off');
 axis(f1.s1,'image');
 set(findall(f1.f,'type','axes'),'nextplot','add');
 
-% Create inital plot handles
+% Create dynamic plot handles
 f1.image=imagesc(f1.s1,uint64(ones(2)));
 f1.horizontal=plot(f1.s1,nan,nan,'k--');
 f1.vertical=plot(f1.s1,nan,nan,'k--');
@@ -155,7 +155,6 @@ mov(1).CData=[];%preallocate structure array
 count1=1;% Counter counting the iteration for each while loop
 count2=1;% Counter counting the iteration # in 'frame' array being looped
 check=0;% a flag for checking if frame is new (0 for dupli. 1 for new)
-% bt=nan(1,4);
 while hasFrame(Vidobj)&&count1<=max(frames)
     
     % Import current frame
@@ -193,7 +192,7 @@ while hasFrame(Vidobj)&&count1<=max(frames)
             stress_q=spline(m_time,m_stress,time_store);
         end
         
-        % Crop out ROI
+        % Crop out ROI from raw image
         if ~isempty(ROI)
             frame=mov(1).CData(ROI(1):ROI(2),ROI(3):ROI(4),:);
         else
@@ -205,7 +204,7 @@ while hasFrame(Vidobj)&&count1<=max(frames)
             frame=frame(40:end-40,50:end-50,:);%remove edges caused by rotation
         end
         
-        % Define white reference area
+        % Define white reference area from raw image
         white=mov(1).CData(white_ROI(1):white_ROI(2),...
             white_ROI(3):white_ROI(4),:);
         
@@ -250,18 +249,13 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         % Find left boundary
         ii3=find(c1<=v_divider,1,'first');
         left_black=c1(ii3)+border_offset;
-%         bt(3)=b_subimage(ii3);
 
         % Find right boundary
         ii3=find(c1>=v_divider,1,'last');
         right_black=c1(ii3)-border_offset;
-%         bt(4)=b_subimage(ii3);
 
         %Define subimage that will be used to calculate statistics
         subimage=frame_corr(top_black+border_offset:bottom_black-border_offset,...
-            left_black:right_black,:);
-        
-        subimage0=frame(top_black+border_offset:bottom_black-border_offset,...
             left_black:right_black,:);
         
         % Determine the RGB ratio of the subimage and calculate stats
