@@ -41,6 +41,9 @@ function RGB_analysis(filename,frames,varargin)
 % 
 % 'time_offset': define a time offset (default is 0)
 % 
+% 'CC_ref': define an offset to the chromatic changes (default is [0 0
+% 0], corresponding to R, G, B, respectively)
+% 
 %% OUTPUT
 % Note that all the variables in this fcn will be placed in the caller
 % workspace.
@@ -61,6 +64,7 @@ params.addParameter('rotate',[],@(x) isempty(x)|isnumeric(x));
 params.addParameter('border_offset',15,@(x) isnumeric(x));
 params.addParameter('crop_border',50,@(x) isnumeric(x));
 params.addParameter('time_offset',0,@(x) isnumeric(x));
+params.addParameter('CC_ref',[0 0 0],@(x) isnumeric(x));
 params.parse(varargin{:});
 
 % Extract out values from parsed input
@@ -75,6 +79,7 @@ theta=params.Results.rotate;
 border_offset=params.Results.border_offset;
 crop_border=params.Results.crop_border;
 t_offset=params.Results.time_offset;
+CC_ref=params.Results.CC_ref;
 
 % Preallocate arrays to speed algorithm
 abs_frame_index=nan(numel(frames),1);% absolute frame number
@@ -345,9 +350,16 @@ while hasFrame(Vidobj)&&count1<=max(frames)
             end
 
             % Calculate the Delta RGB ratio
-            RCC=R_mean-nanmean(R_mean(1:5));
-            GCC=G_mean-nanmean(G_mean(1:5));
-            BCC=B_mean-nanmean(B_mean(1:5));
+            if sum(CC_ref)==0
+                RCC=R_mean-nanmean(R_mean(1:5));
+                GCC=G_mean-nanmean(G_mean(1:5));
+                BCC=B_mean-nanmean(B_mean(1:5));
+            else
+                RCC=R_mean-CC_ref(1);
+                GCC=G_mean-CC_ref(2);
+                BCC=B_mean-CC_ref(3);
+            end
+            TCC=sqrt(RCC.^2+GCC.^2+BCC.^2);
 
             % Plot delta_RGB values
             set(f1.delR,'xdata',time_store,...
@@ -429,12 +441,12 @@ end
 if isempty(m_file)
     save(export_filename,'time_store','R_mean','G_mean','B_mean',...
         'RCC','GCC','BCC','R_std','G_std','B_std','lambda','white',...
-        'subimage','varargin');
+        'subimage','varargin','TCC');
 else
     save(export_filename,'time_store','R_mean','G_mean','B_mean',...
         'RCC','GCC','BCC','R_std','G_std','B_std','lambda','white',...
         'subimage','varargin','stress_q','m_stress','m_time',...
-        'raw');
+        'raw','TCC');
 end
 
 disp(['Finished on: ',datestr(clock)])
