@@ -36,6 +36,11 @@ function RGB_analysis(filename,frames,varargin)
 % 
 % 'border_offset': border offset when identifying the sample region
 % 
+% 'crop_border': crop the border after rotation (will only apply if the
+% value for 'rotate' is not empty) (pxs)
+% 
+% 'time_offset': define a time offset (default is 0)
+% 
 %% OUTPUT
 % Note that all the variables in this fcn will be placed in the caller
 % workspace.
@@ -54,6 +59,8 @@ params.addParameter('mech_file',[],@(x) ischar(x));
 params.addParameter('export_filename',[],@(x) ischar(x));
 params.addParameter('rotate',[],@(x) isempty(x)|isnumeric(x));
 params.addParameter('border_offset',15,@(x) isnumeric(x));
+params.addParameter('crop_border',50,@(x) isnumeric(x));
+params.addParameter('time_offset',0,@(x) isnumeric(x));
 params.parse(varargin{:});
 
 % Extract out values from parsed input
@@ -64,8 +71,10 @@ h_divider=params.Results.h_divider;
 v_divider=params.Results.v_divider;
 m_file=params.Results.mech_file;
 export_filename=params.Results.export_filename;
-rot=params.Results.rotate;
+theta=params.Results.rotate;
 border_offset=params.Results.border_offset;
+crop_border=params.Results.crop_border;
+t_offset=params.Results.time_offset;
 
 % Preallocate arrays to speed algorithm
 abs_frame_index=nan(numel(frames),1);% absolute frame number
@@ -130,9 +139,7 @@ f1.delG=plot(f1.s4,nan,nan,'g.','markersize',14);
 f1.delB=plot(f1.s4,nan,nan,'b.','markersize',14);
 xylabels(f1.s4,'time (s)','\DeltaRGB ratio');
 
-% Plot white reference area
-set(f1.white,'xdata',white_ROI([3 3 4 4 3]),...
-    'ydata',white_ROI([1 2 2 1 1]));
+
 
 %%
 % Video file is too large to import all of the frames into memory. Thus,
@@ -176,6 +183,64 @@ while hasFrame(Vidobj)&&count1<=max(frames)
     end
     prev=mov(1).CData;
     
+    if count1==1%only do this for the first frame
+        % Show the white ref area relative to the ROI in red
+
+        % define diagonals of white ROI
+        coord1=white_ROI([3 2]);
+        coord2=white_ROI([4 1]);   
+            
+        if ~isempty(theta)% if a rotation angle is defined
+            
+            % define reference point
+            if isempty(ROI)
+                ref_pt=[size(mov.CData,2) 1];
+            else
+                ref_pt=ROI([4 1]);
+            end
+            
+            % 2D rotation matrix (rotate in the counter clockwise direction)
+            rot_f=@(x) [cosd(x) -sind(x);sind(x) cosd(x)];
+            
+            % perform rotation
+            coord1=rot_f(theta)*coord1(:);
+            coord2=rot_f(theta)*coord2(:);
+            ref_pt=rot_f(theta)*ref_pt(:);
+            
+            % redefine coord rel. to ref. pt
+            coord1b=ref_pt-coord1;
+            coord2b=ref_pt-coord2;
+            
+        else% no rotation angle defined
+            
+            % define reference point
+            if isempty(ROI)
+                ref_pt=[1 1];
+            else
+                ref_pt=ROI([3 1]);
+            end
+            
+            % redefine coord rel. to ref. pt
+            coord1b=coord1-ref_pt;
+            coord2b=coord2-ref_pt;
+        end
+        
+        white_ROI2=[...
+            min([coord1b(2) coord2b(2)]),...
+            max([coord1b(2) coord2b(2)]),...
+            min([coord1b(1) coord2b(1)]),...
+            max([coord1b(1) coord2b(1)])];
+        
+        %include offset if a crop_border is defined w/ rotation
+        if ~isempty(theta)
+            white_ROI2=white_ROI2-crop_border;
+        end
+
+        % show the white ROI
+        set(f1.white,'xdata',white_ROI2([3 3 4 4 3]),...
+            'ydata',white_ROI2([1 2 2 1 1]));
+    end
+    
     %check to see whether or not to process frame
     if sum(frames==count1)==1&&check==1
         disp(['Current frame time: ',num2str(Vidobj.CurrentTime),...
@@ -185,7 +250,7 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         if count2==1%remember first time point
             start=Vidobj.CurrentTime;
         end
-        time_store(count2)=Vidobj.CurrentTime-start;%rel. time
+        time_store(count2)=Vidobj.CurrentTime-start+t_offset;%rel. time
         
         % interpolate stresses if mech file is provided
         if ~isempty(m_file)
@@ -199,9 +264,10 @@ while hasFrame(Vidobj)&&count1<=max(frames)
             frame=mov(1).CData;
         end
         
-        if ~isempty(rot)%check to see if frame needs to be rotate
-            frame=imrotate(frame,rot);%rotate the frame
-            frame=frame(40:end-40,50:end-50,:);%remove edges caused by rotation
+        if ~isempty(theta)%check to see if frame needs to be rotate
+            frame=imrotate(frame,theta);%rotate the frame
+            frame=frame(crop_border+1:end-crop_border,...
+                crop_border+1:end-crop_border,:);%remove edges caused by rotation
         end
         
         % Define white reference area from raw image
@@ -363,11 +429,11 @@ end
 if isempty(m_file)
     save(export_filename,'time_store','R_mean','G_mean','B_mean',...
         'RCC','GCC','BCC','R_std','G_std','B_std','lambda','white',...
-        'subimage','subimage0','varargin');
+        'subimage','varargin');
 else
     save(export_filename,'time_store','R_mean','G_mean','B_mean',...
         'RCC','GCC','BCC','R_std','G_std','B_std','lambda','white',...
-        'subimage','subimage0','varargin','stress_q','m_stress','m_time',...
+        'subimage','varargin','stress_q','m_stress','m_time',...
         'raw');
 end
 
