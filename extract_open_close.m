@@ -1,4 +1,4 @@
-function [closed_frame opened_frame]=extract_open_close(filenames,varargin)
+function [closed_frame, opened_frame]=extract_open_close(filenames,varargin)
 % Joshua Yeh
 % Date created: 19/04/05
 %% DESCRIPTION
@@ -59,9 +59,11 @@ f1.L=legend([f1.p1 f1.p2 f1.p3],'orientation','horizontal','location','north');
 f1.L.FontSize=10;
 linkaxes([f1.s1 f1.s2 f1.s3],'x');
 
+% Add a custom datacursormode to the timeline figure
 dcm_obj=datacursormode(f1.f);
 set(dcm_obj,'UpdateFcn',{@show_frame,filenames});
 
+% show the frame associated with the current/selected frame index
 f2=my_fig(2);
 f2.I=imagesc(f2.s1,nan);
 f2.I.Tag='open_close_frame';
@@ -70,12 +72,12 @@ axis(f2.s1,'image');
 set(f2.s1,'fontsize',8,'ydir','reverse');
 center_axes(f2.s1,'margins',30);
 
+% show the mean intensity profile
 f3=my_fig(3);
 f3.p1=plot(f3.s1,nan,nan,'k-');
 f3.p2=plot(f3.s1,nan,nan,'r-');
 xylabels(f3.s1,'array index','intensity (a.u.)');
 center_axes(f3.s1);
-
 
 % check to see if filenames is an avi or a series of images
 if isstruct(filenames)
@@ -114,7 +116,7 @@ if strcmp(format,'images')%if filenames is a series of images
         % extract out the subimage
         I1=I0(ROI(1):ROI(2),ROI(3):ROI(4),1);
         I2=nanmean(I1,2);% take mean in col dir
-        if isempty(thresh)
+        if isempty(thresh)%define threshold value if user didnt define it
             thresh=graythresh(I2);
             thresh=thresh*max(I2);
         end

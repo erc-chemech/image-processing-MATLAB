@@ -37,12 +37,13 @@ function RGB_analysis(filename,frames,varargin)
 % 'border_offset': border offset when identifying the sample region
 % 
 % 'crop_border': crop the border after rotation (will only apply if the
-% value for 'rotate' is not empty) (pxs)
+% value for 'rotate' ~=0) (pxs)
 % 
 % 'time_offset': define a time offset (default is 0)
 % 
-% 'CC_ref': define an offset to the chromatic changes (default is [0 0
-% 0], corresponding to R, G, B, respectively)
+% 'CC_ref': define ref for calc. chromatic changes (default is [0 0
+% 0], corresponding to R, G, B, respectively). Note that the value array
+% must have three elements.
 % 
 %% OUTPUT
 % Note that all the variables in this fcn will be placed in the caller
@@ -55,16 +56,16 @@ params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('ROI',[],@(x) isnumeric(x));
 params.addParameter('white_ROI',[450 550 10 25],@(x) isnumeric(x));
-params.addParameter('black_thresh',40,@(x) isnumeric(x));
+params.addParameter('black_thresh',150,@(x) isnumeric(x));
 params.addParameter('h_divider',500,@(x) isnumeric(x));
 params.addParameter('v_divider',65,@(x) isnumeric(x));
 params.addParameter('mech_file',[],@(x) ischar(x));
 params.addParameter('export_filename',[],@(x) ischar(x));
-params.addParameter('rotate',[],@(x) isempty(x)|isnumeric(x));
+params.addParameter('rotate',0,@(x) isnumeric(x));
 params.addParameter('border_offset',15,@(x) isnumeric(x));
 params.addParameter('crop_border',50,@(x) isnumeric(x));
 params.addParameter('time_offset',0,@(x) isnumeric(x));
-params.addParameter('CC_ref',[0 0 0],@(x) isnumeric(x));
+params.addParameter('CC_ref',[0 0 0],@(x) isnumeric(x)&numel(x)==3);
 params.parse(varargin{:});
 
 % Extract out values from parsed input
@@ -121,6 +122,8 @@ axis(f1.s1,'image');
 set(findall(f1.f,'type','axes'),'nextplot','add');
 
 % Create dynamic plot handles
+
+% axes associated with the frame
 f1.image=imagesc(f1.s1,uint64(ones(2)));
 f1.horizontal=plot(f1.s1,nan,nan,'k--');
 f1.vertical=plot(f1.s1,nan,nan,'k--');
@@ -129,22 +132,23 @@ f1.white=plot(f1.s1,nan,nan,'r--');
 f1.top_bar=plot(f1.s1,nan,nan,'r-');
 f1.bot_bar=plot(f1.s1,nan,nan,'r-');
 
-f1.mR=plot(f1.s3,nan,nan,'r.');
-f1.mG=plot(f1.s3,nan,nan,'g.');
-f1.mB=plot(f1.s3,nan,nan,'b.');
-xylabels(f1.s3,'nominal stress (MPa)','\DeltaRGB');
-
+% chromatic values vs time
 f1.R_mean=plot(f1.s2,time_store,R_mean,'r.','markersize',14);
 f1.G_mean=plot(f1.s2,time_store,R_mean,'g.','markersize',14);
 f1.B_mean=plot(f1.s2,time_store,R_mean,'b.','markersize',14);
 xylabels(f1.s2,'time (s)','RGB ratio');
 
+% chromatic change vs stress
+f1.mR=plot(f1.s3,nan,nan,'r.');
+f1.mG=plot(f1.s3,nan,nan,'g.');
+f1.mB=plot(f1.s3,nan,nan,'b.');
+xylabels(f1.s3,'nominal stress (MPa)','\DeltaRGB');
+
+% chromatic change vs time
 f1.delR=plot(f1.s4,nan,nan,'r.','markersize',14);
 f1.delG=plot(f1.s4,nan,nan,'g.','markersize',14);
 f1.delB=plot(f1.s4,nan,nan,'b.','markersize',14);
 xylabels(f1.s4,'time (s)','\DeltaRGB ratio');
-
-
 
 %%
 % Video file is too large to import all of the frames into memory. Thus,
@@ -163,7 +167,6 @@ mov = struct('CData',zeros(Vidobj.Height,Vidobj.Width,3,1,'uint8'),...
     'abs_frame_index',[],'CurrentTime',[]);
 mov(1).CData=[];%preallocate structure array
 
-% flag1=1;% This flag controls the condition in which to continue while loop
 count1=1;% Counter counting the iteration for each while loop
 count2=1;% Counter counting the iteration # in 'frame' array being looped
 check=0;% a flag for checking if frame is new (0 for dupli. 1 for new)
@@ -188,62 +191,45 @@ while hasFrame(Vidobj)&&count1<=max(frames)
     end
     prev=mov(1).CData;
     
-    if count1==1%only do this for the first frame
-        % Show the white ref area relative to the ROI in red
-
-        % define diagonals of white ROI
-        coord1=white_ROI([3 2]);
-        coord2=white_ROI([4 1]);   
-            
-        if ~isempty(theta)% if a rotation angle is defined
-            
-            % define reference point
-            if isempty(ROI)
-                ref_pt=[size(mov.CData,2) 1];
-            else
-                ref_pt=ROI([4 1]);
-            end
-            
-            % 2D rotation matrix (rotate in the counter clockwise direction)
-            rot_f=@(x) [cosd(x) -sind(x);sind(x) cosd(x)];
-            
-            % perform rotation
-            coord1=rot_f(theta)*coord1(:);
-            coord2=rot_f(theta)*coord2(:);
-            ref_pt=rot_f(theta)*ref_pt(:);
-            
-            % redefine coord rel. to ref. pt
-            coord1b=ref_pt-coord1;
-            coord2b=ref_pt-coord2;
-            
-        else% no rotation angle defined
-            
-            % define reference point
-            if isempty(ROI)
-                ref_pt=[1 1];
-            else
-                ref_pt=ROI([3 1]);
-            end
-            
-            % redefine coord rel. to ref. pt
-            coord1b=coord1-ref_pt;
-            coord2b=coord2-ref_pt;
+    % mark the white ROI (only need to do this once)
+    if count1==1
+        
+        % Create logical array w/ the size of the raw frame. This will be
+        % used to track the white_ROI location during frame transformation
+        % (after cropping and rotation).
+        marked=false(size(mov(1).CData(:,:,1)));
+        marked(white_ROI(1),white_ROI(3))=true;%mark upper left pt
+        marked(white_ROI(1),white_ROI(4))=true;%mark upper right pt
+        marked(white_ROI(2),white_ROI(4))=true;%mark lower right pt
+        marked(white_ROI(2),white_ROI(3))=true;%mark lower left pt
+        
+        % Crop out ROI from raw image if user specifies ROI
+        if ~isempty(ROI)%if ROI is specified
+            marked=marked(ROI(1):ROI(2),ROI(3):ROI(4),:);
         end
         
-        white_ROI2=[...
-            min([coord1b(2) coord2b(2)]),...
-            max([coord1b(2) coord2b(2)]),...
-            min([coord1b(1) coord2b(1)]),...
-            max([coord1b(1) coord2b(1)])];
-        
-        %include offset if a crop_border is defined w/ rotation
-        if ~isempty(theta)
-            white_ROI2=white_ROI2-crop_border;
+        % check to see if frame needs to be rotate
+        if theta~=0
+            marked=imrotate(marked,theta);%rotate logical array
+            
+            %remove edges due to rotation
+            marked=marked(crop_border+1:end-crop_border,...
+                crop_border+1:end-crop_border,:);
         end
-
-        % show the white ROI
-        set(f1.white,'xdata',white_ROI2([3 3 4 4 3]),...
-            'ydata',white_ROI2([1 2 2 1 1]));
+        
+        % Determine the white_ROI coordinates after cropping & rotation
+        mark_idx=find(marked==true);
+        [mark_y,mark_x]=ind2sub(size(marked),mark_idx);
+        mark_xy=[mark_x(:),mark_y(:)];%xy coordinates of marked pts
+        
+        % Need to perform knnsearch (nearest neighbor search) so that the
+        % order of the xy-coordinates will result in the plotting of a box.
+        mark_xy_idx=knnsearch(mark_xy,mark_xy(1,:),'k',4);
+        mark_xy2=mark_xy(mark_xy_idx([1;2;4;3]),:);%reorder pts
+        mark_xy2=cat(1,mark_xy2,mark_xy2(1,:));%close the box
+        
+        % show the white_ROI
+        set(f1.white,'xdata',mark_xy2(:,1),'ydata',mark_xy2(:,2));
     end
     
     %check to see whether or not to process frame
@@ -262,23 +248,26 @@ while hasFrame(Vidobj)&&count1<=max(frames)
             stress_q=spline(m_time,m_stress,time_store);
         end
         
-        % Crop out ROI from raw image
-        if ~isempty(ROI)
-            frame=mov(1).CData(ROI(1):ROI(2),ROI(3):ROI(4),:);
-        else
-            frame=mov(1).CData;
-        end
-        
-        if ~isempty(theta)%check to see if frame needs to be rotate
-            frame=imrotate(frame,theta);%rotate the frame
-            frame=frame(crop_border+1:end-crop_border,...
-                crop_border+1:end-crop_border,:);%remove edges caused by rotation
-        end
+        frame=mov(1).CData;%extract current raw frame
         
         % Define white reference area from raw image
         white=mov(1).CData(white_ROI(1):white_ROI(2),...
-            white_ROI(3):white_ROI(4),:);
+            white_ROI(3):white_ROI(4),:);        
         
+        % Crop out ROI from raw image if user specifies ROI
+        if ~isempty(ROI)%if ROI is specified
+            frame=frame(ROI(1):ROI(2),ROI(3):ROI(4),:);
+        end
+        
+        % check to see if frame needs to be rotate
+        if theta~=0
+            frame=imrotate(frame,theta);%rotate the frame
+            
+            %remove edges due to rotation
+            frame=frame(crop_border+1:end-crop_border,...
+                crop_border+1:end-crop_border,:);
+        end
+                  
         % Apply color correction
         frame_corr=rgb_correction(frame,white,'simple',200,'flag',0);
         
@@ -301,16 +290,36 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         bottom_black=ii1(ii3)-1;
         
         % Calculate distance between top and bottom
-        dist(count2)=abs(top_black-bottom_black);
+        try
+            dist(count2)=abs(top_black-bottom_black);
+        catch
+            % show histogram of intensity subimage
+            figure; histogram(channel1b(:));
+            xylabels(gca,'intensity (a.u.)','counts');
+            center_axes;
+            
+            % show subimage
+            figure; imagesc(frame); axis image; center_axes;
+            
+            error(['Unable to continue. Value for black_thresh is ',...
+                'likely badly conditioned. A histogram is plotted' ,...
+                'to visualize appropriate black_thresh value. It ',...
+                'is possible that the h_divider and/or v_divider ',...
+                'is also badly conditioned. An image of the frame ',...
+                'is shown to visualize approprate value(s) ',...
+                'for h_divider and/or v_divider.']);
+        end
         
         % Calculate the extension ratio, lambda
         lambda(count2)=dist(count2)./dist(1);
 
-        % Define subimage defined by top and bottom boundariers that will be
+        % Define subimage defined by top and bottom boundaries that will be
         % used to find the left and right boundaries
-        b_subimage=sum(frame_corr(top_black-10:bottom_black+10,:,:),3);%intensity channel
+        
+        % Calculate the intensity of the subimage
+        b_subimage=sum(frame_corr(top_black-10:bottom_black+10,:,:),3);
 
-        % Find indices corresponding to pixels falling wihtin threshold of the
+        % Find indices corresponding to pixels falling within threshold of the
         % subimage
         ii1=find(b_subimage(:)<=black_thresh);
 
@@ -326,7 +335,8 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         right_black=c1(ii3)-border_offset;
 
         %Define subimage that will be used to calculate statistics
-        subimage=frame_corr(top_black+border_offset:bottom_black-border_offset,...
+        subimage=...
+            frame_corr(top_black+border_offset:bottom_black-border_offset,...
             left_black:right_black,:);
         
         % Determine the RGB ratio of the subimage and calculate stats
@@ -339,15 +349,12 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         B_std(count2)=nanstd(B_ratio(:));
         
         % Based on the top boundary line of the subimage, recalculate
-        % appropriate h_divider(n)
+        % appropriate h_divider and v_divider
         if count2>1
             h_divider=bottom_black-round((bottom_black-top_black)/2);
             
-            vd_test=right_black-round((right_black-left_black)/2);
-            if abs(vd_test-v_divider)>50
-            else            
-                v_divider=vd_test;
-            end
+            % estimate what the vd_test should be
+            v_divider=right_black-round((right_black-left_black)/2);
 
             % Calculate the Delta RGB ratio
             if sum(CC_ref)==0
@@ -359,15 +366,14 @@ while hasFrame(Vidobj)&&count1<=max(frames)
                 GCC=G_mean-CC_ref(2);
                 BCC=B_mean-CC_ref(3);
             end
+            
+            % total chromatic change (Euclidean norm)
             TCC=sqrt(RCC.^2+GCC.^2+BCC.^2);
 
             % Plot delta_RGB values
-            set(f1.delR,'xdata',time_store,...
-                'ydata',RCC);
-            set(f1.delG,'xdata',time_store,...
-                'ydata',GCC);
-            set(f1.delB,'xdata',time_store,...
-                'ydata',BCC);
+            set(f1.delR,'xdata',time_store,'ydata',RCC);
+            set(f1.delG,'xdata',time_store,'ydata',GCC);
+            set(f1.delB,'xdata',time_store,'ydata',BCC);
             
             % Plot chromaticity vs mechanical response
             if ~isempty(m_file)
@@ -388,15 +394,19 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         set(f1.vertical,'xdata',ones(1,2).*v_divider,...
             'ydata',[1 size(frame_corr,1)]);
         
-        % Plot ROI
+        % Plot sample ROI
         set(f1.ROI,'xdata',...
             [left_black right_black right_black left_black left_black],...
             'ydata',...
             [bottom_black-border_offset bottom_black-border_offset,...
             top_black+border_offset top_black+border_offset,...
             bottom_black-border_offset]);
+        
+        % Plot sample top line
         set(f1.top_bar,'xdata',[left_black right_black],...
             'ydata',[top_black top_black]);
+        
+        % Plot sample bottom line
         set(f1.bot_bar,'xdata',[left_black right_black],...
             'ydata',[bottom_black bottom_black]);
 
@@ -404,7 +414,6 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         set(f1.R_mean,'YData',R_mean,'xdata',time_store);
         set(f1.G_mean,'YData',G_mean,'xdata',time_store);
         set(f1.B_mean,'YData',B_mean,'xdata',time_store);
-        
         
         drawnow;
         count2=count2+1;% update counter
