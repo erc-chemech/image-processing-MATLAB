@@ -102,6 +102,8 @@ function parse_sp_crack02b(filename,frame_n,varargin)
     %
     % 'rotate': rotate frames in degrees
     % 
+    % 'climm': colorbar limits for maps
+    %
 %% Parse input variables
 
 narginchk(1,inf);%check the number of input values
@@ -140,6 +142,7 @@ params.addParameter('true_stress_mat','',@(x) ischar(x));
 params.addParameter('corr_factor',1,@(x) isnumeric(x));
 params.addParameter('m_file',[],@(x) ischar(x));
 params.addParameter('rotate',0,@(x) isnumeric(x));
+params.addParameter('climm',[],@(x) isnumeric(x));
 params.parse(varargin{:});
 
 %Extract out values from parsed input
@@ -170,6 +173,7 @@ ts_mat=params.Results.true_stress_mat;
 corr_factor=params.Results.corr_factor;
 m_file=params.Results.m_file;
 rot=params.Results.rotate;
+climm_user=params.Results.climm;
 
 if video_mode==1
     visible='off';
@@ -610,6 +614,10 @@ if stress_calc==1
         m3_m=m3_E;
         climm=[0.5 1.5];
         strm='energy density (MPa)';
+    end
+    
+    if ~isempty(climm_user)
+        climm=climm_user;
     end
     
     zdata=px_coord2image(IA(m3,6),IA(m3,7),m3_m,size(ref_corr));

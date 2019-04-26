@@ -270,7 +270,8 @@ for dum=1:size(centroids,1)
         kk=[];
     end
     
-    if isempty(kk)&&DCA>pt_window%only store point if it is unique
+    %only store point if it is unique
+    if (isempty(kk)&&DCA>pt_window)||(isempty(kk)&&isnan(DCA)==1)
         if strcmp(dot_I,'max')
             ii1=[ii1;c1+c(1),r1+r(1),M,D];
         elseif strcmp(dot_I,'averaged')
