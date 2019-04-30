@@ -69,8 +69,8 @@ edge_detect=params.Results.edge_detect;
 I=import_tiff_stack(filename,1,'skip',1,'silence',1);
 
 % define additional variables based on parsed inputs
-H=I.res*res_p;% length of line profile in um
-LE=I.res*n_cuts;% target length of edge
+H=w2*res_p;% length of line profile in um
+LE=w2*n_cuts;% target length of edge
 
 % Load flat-field correction map
 load(ffmat,'IH');
