@@ -127,7 +127,7 @@ params.addParameter('loading_fit_file','TN135_loading_fits.mat',...
 params.addParameter('csmfile','CSM_TN135.fig',@(x) ischar(x));
 params.addParameter('color_stress_map','TN135_color_stress_map.mat',...
     @(x) ischar(x));
-params.addParameter('load_clim',[1 5],@(x) isnumeric(x));
+params.addParameter('load_clim',[0 6],@(x) isnumeric(x));
 params.addParameter('unload_clim',[0 2],@(x) isnumeric(x));
 params.parse(varargin{:});
 
@@ -498,8 +498,9 @@ end
 
 disp('Processing finished');
 
-%% PLOT THE RESULTS
 
+
+%% PLOT THE RESULTS
 
 %% %%%%%%%%%%%%%%%%%%% figure 1 %%%%%%%%%%%%%%%%%%%%%
 % Raw extracted frame (initial reference area and raw subimage w/ mask)
@@ -734,7 +735,6 @@ if stress_calc==1
     
     % chromatic-stress mapping
     copyobj(get(f4.s1,'children'),f7.s2);
-%     delete(findall(f7.s2,'type','line','linestyle','-'));
     set(f7.s2,'xlim',[-0.04 0.04],'ylim',[0 0.08]);
     uistack(f7.s3,'bottom');
     linkaxes([f7.s2 f7.s3],'xy');
