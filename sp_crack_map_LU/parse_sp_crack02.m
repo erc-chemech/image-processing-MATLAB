@@ -87,6 +87,10 @@ function parse_sp_crack02(filename,frame_n,varargin)
     %
     % 'color_stress_map': mat file of the color stress calibration map
     % 
+    % 'load_clim': colorbar scale limits for the loading stresses
+    %
+    % 'unload_clim': colorbar scale limits for the unloading stresses
+    %
 %% Parse input variables
 
 narginchk(1,inf);%check the number of input values
@@ -123,6 +127,8 @@ params.addParameter('loading_fit_file','TN135_loading_fits.mat',...
 params.addParameter('csmfile','CSM_TN135.fig',@(x) ischar(x));
 params.addParameter('color_stress_map','TN135_color_stress_map.mat',...
     @(x) ischar(x));
+params.addParameter('load_clim',[1 5],@(x) isnumeric(x));
+params.addParameter('unload_clim',[0 2],@(x) isnumeric(x));
 params.parse(varargin{:});
 
 %Extract out values from parsed input
@@ -149,6 +155,8 @@ ED_unload=params.Results.ED_unload;
 loading_fit_file=params.Results.loading_fit_file;
 csmfile=params.Results.csmfile;
 color_stress_map=params.Results.color_stress_map;
+load_clim=params.Results.load_clim;
+unload_clim=params.Results.unload_clim;
 
 if video_mode==1
     visible='off';
@@ -492,14 +500,28 @@ disp('Processing finished');
 
 %% PLOT THE RESULTS
 
-% Declare figure handles
+% import the iso-stress lines for TN135
+try delete(fcsm.f); catch; end
+fcsm.f=openfig('CSM_TN135.fig','invisible');
+fcsm.s0=findall(fcsm.f,'type','axes');
+clim_iso_stress=fcsm.s0.CLim;
+delete(findall(fcsm.f,'color',ones(1,3).*0.7));
+try delete(fcsm.f); catch; end
 
-% Figure 1
+%% %%%%%%%%%%%%%%%%%%% figure 1 %%%%%%%%%%%%%%%%%%%%%
+% Raw extracted frame (initial reference area and raw subimage w/ mask)
 f1=my_fig(1,{[1 2 1] [1 2 2]},'visible',visible);
 axis([f1.s1 f1.s2],'image');
 set(f1.f,'name','Raw extracted frame');
 
-% Figure 2
+imagesc(f1.s1,uint8(ref_corr));
+imagesc(f1.s2,uint8(frame_corr));
+
+%% %%%%%%%%%%%%%%%%%%% figure 2 %%%%%%%%%%%%%%%%%%%%%
+
+% figure containing various histograms
+
+% format figure
 f2=my_fig(2,{[3 2 1] [3 2 2] [3 2 3] [3 2 4] [3 2 5] [3 2 6]},...
     'fontsize',10,'visible',visible);
 set(f2.f,'name','Corrected extracted frame');
@@ -513,81 +535,6 @@ title(f2.s5,'histogram of ref intensities');
 title(f2.s6,'histogram of frame intensities');
 set(f2.s3,'xlim',[-0.02 0.02]);
 set(f2.s4,'xlim',[-0.02 0.02]);
-
-% Figure 3
-f3=my_fig(3,{[1 1 1]},'visible',visible);
-f3.f.Position(4)=565;
-f3.s2=axes;
-f3.s3=axes;
-set(f3.s2,'position',[0.65 0.7 0.1 0.3]);
-set(f3.f,'name','Color mapping of reference sample area');
-xylabels(f3.s1,'Green chromatic change','Total chromatic change');
-set(f3.s3,'position',f3.s1.Position,'color','none','box','off',...
-    'xcolor','none','ycolor','none','view',f1.s1.View);
-
-% Figure 4
-f4=my_fig(4,{[1 1 1]},'visible',visible);
-f4.f.Alphamap=linspace(0,1,256);
-set(f4.f,'name','Color mapping of activated sample area');
-xylabels(f4.s1,'Green chromatic change','Total chromatic change');
-set(f4.s1,'xlim',[-0.04 0.04],'ylim',[0 0.08]);
-
-% Figure 5
-f5=my_fig(5,{[1 1 1]},'marg_w',[0.01 0.01],'marg_h',[0.01 0.01],...
-    'visible',visible);
-f5.f.Alphamap=linspace(0,1,256);
-f5.f.Position(3:4)=[667 645];
-
-
-% Figure 7
-if stress_calc==1
-    f7=my_fig(7,{[1 2 1] [1 2 2]});
-    f7.f.Position(3:4)=[959 660];
-    f7.s2.Position([2 4])=[0.4 0.55];
-    f7.s3=copyobj(f7.s2,f7.f);
-    f7.s4=copyobj(f7.s1,f7.f);
-    uistack(f7.s4,'top');
-    xylabels(f7.s2,'Green chromatic change','Total chromatic change');
-end
-
-% Figure 8
-f8=my_fig(8);
-f8.f.Position(3:4)=[340 330];
-axis(f8.s1,'image');
-
-% Figure 9
-f9=my_fig(9);
-f9.f.Position(3:4)=[340 330];
-f9.s2=copyobj(f9.s1,f9.f);
-
-% Figure 10
-f10=my_fig(10);
-
-% Figure 12
-f12=my_fig(12);
-f12.f.Position(3:4)=[340 330];
-
-% Figure 13
-f13=my_fig(13);
-f13.f.Position(3:4)=[340 330];
-
-
-% import the iso-stress lines for TN135
-try delete(fcsm.f); catch; end
-fcsm.f=openfig('CSM_TN135.fig','invisible');
-fcsm.s0=findall(fcsm.f,'type','axes');
-clim_iso_stress=fcsm.s0.CLim;
-delete(findall(fcsm.f,'color',ones(1,3).*0.7));
-% Copy the plot to f3.f and f4.f figures
-f3.csm=copyobj(findall(fcsm.s0(1),'type','line'),f3.s1);
-f4.csm=copyobj(findall(fcsm.s0(1),'type','line'),f4.s1);
-try delete(fcsm.f); catch; end
-
-%% %%%%%%%%%%%%%%%%%%% figure 1 %%%%%%%%%%%%%%%%%%%%%
-imagesc(f1.s1,uint8(ref_corr));
-imagesc(f1.s2,uint8(frame_corr));
-
-%% %%%%%%%%%%%%%%%%%%% figure 2 %%%%%%%%%%%%%%%%%%%%%
 
 histogram(f2.s1,ref_corr(:,:,1),'facecolor','r','facealpha',0.5);
 histogram(f2.s1,ref_corr(:,:,2),'facecolor','g','facealpha',0.5);
@@ -603,6 +550,22 @@ histogram(f2.s5,ref_corr_sum(:));
 histogram(f2.s6,frame_corr_sum(:));
 
 %% %%%%%%%%%%%%%%%%%%% figure 3 %%%%%%%%%%%%%%%%%%%%%
+% color mapping of the initial sample reference area
+
+% figure formatting
+f3=my_fig(3,{[1 1 1]},'visible',visible);
+f3.f.Position(4)=565;
+f3.s2=axes;
+f3.s3=axes;
+set(f3.s2,'position',[0.65 0.7 0.1 0.3]);
+set(f3.f,'name','Color mapping of reference sample area');
+xylabels(f3.s1,'Green chromatic change','Total chromatic change');
+set(f3.s3,'position',f3.s1.Position,'color','none','box','off',...
+    'xcolor','none','ycolor','none','view',f1.s1.View);
+
+% copy color stress calibration map
+f3.csm=copyobj(findall(fcsm.s0(1),'type','line'),f3.s1);
+
 % Plot loading line
 TCC_load=linspace(0,0.133,100);
 TCC_load_n=(TCC_load-temp_TCC_load_avg)./temp_TCC_load_std;
@@ -624,9 +587,7 @@ colormap(f3.s1,'summer');
 set(f3.s1,'clim',clim_iso_stress,'xlim',[-0.1 0.05],'ylim',[0 0.15]);
 center_axes(f3.s1);
 
-
 %transform chromatic datapoints to 2d histogram array
-% f3.surf1=my_hist2(f3.s1,GCC0(:),TCC0(:));
 f3.surf1=my_honeycomb(f3.s1,GCC0(:),TCC0(:),'max',100,'res',res,...
     'dn','background','color','k');
 
@@ -639,16 +600,25 @@ f3.c3=alphaColorbar(f3.s3,f3.surf1,'clab','Counts');
 f3.s1.Position=f3.s3.Position;
 linkaxes([f3.s1 f3.s3],'xy');
 
-
 % image frame of reference area
 imagesc(f3.s2,uint8(ref_corr));
 axis(f3.s2,'image');
 set(f3.s2,'box','off','xcolor','none','ycolor','none','xtick',[],...
     'ytick',[]);
 
-
-
 %% %%%%%%%%%%%%%%%%%%% figure 4 %%%%%%%%%%%%%%%%%%%%%
+% colormapping of the activated sample area
+
+% format figure
+f4=my_fig(4,{[1 1 1]},'visible',visible);
+f4.f.Alphamap=linspace(0,1,256);
+set(f4.f,'name','Color mapping of activated sample area');
+xylabels(f4.s1,'Green chromatic change','Total chromatic change');
+set(f4.s1,'xlim',[-0.04 0.04],'ylim',[0 0.08]);
+
+% copt color-stress calibration map
+f4.csm=copyobj(findall(fcsm.s0(1),'type','line'),f4.s1);
+
 plot(f4.s1,polyval(TCCvGCC_load,TCC_load_n),TCC_load,'k--');
 
 % Create boundary of physical values on chromatic map
@@ -675,8 +645,15 @@ f4.N_m3=my_honeycomb(f4.s1,GCC(m3),TCC(m3),'max',max1*1e1,'res',res,...
     'dn','loading','color','b');
 f4.N_m3.ZData=ones(size(f4.N_m3.XData)).*100;
 
-
 %% %%%%%%%%%%%%%%%%%%% figure 5 %%%%%%%%%%%%%%%%%%%%%
+% binary mapping showing regions of loading (blue) and unloading (red)
+
+% format figure
+f5=my_fig(5,{[1 1 1]},'marg_w',[0.01 0.01],'marg_h',[0.01 0.01],...
+    'visible',visible);
+f5.f.Alphamap=linspace(0,1,256);
+f5.f.Position(3:4)=[667 645];
+
 imagesc(f5.s1,uint8(rgb_correction(subimage,white_ref,'simple',255)));
 plot(f5.s1,IA(m3,9),IA(m3,8),'b.');
 plot(f5.s1,IA(m1,9),IA(m1,8),'r.','tag','map');
@@ -689,12 +666,18 @@ axis(f5.s1,'image');
 set(f5.s1,'box','off','xtick',[],'ytick',[],'xcolor','none',...
     'ycolor','none');
 
-
-
-
 %% %%%%%%%%%%%%%%%%%%% figure 7 %%%%%%%%%%%%%%%%%%%%%
 
 if stress_calc==1
+    % Create the figure and format it
+    f7=my_fig(7,{[1 2 1] [1 2 2]});
+    f7.f.Position(3:4)=[959 660];
+    f7.s2.Position([2 4])=[0.4 0.55];
+    f7.s3=copyobj(f7.s2,f7.f);
+    f7.s4=copyobj(f7.s1,f7.f);
+    uistack(f7.s4,'top');
+    xylabels(f7.s2,'Green chromatic change','Total chromatic change');
+    
     copyobj(findall(f5.s1,'type','image'),f7.s1);% copy image frame
     axis(f7.s1,'image');
     f7.s1.Position(1)=0.07;
@@ -710,8 +693,8 @@ if stress_calc==1
     axis(f7.s4,'image');
     
     % find the stress associated at the TCC threshold
-    set(f7.s1,'clim',[1 5]);
-    set(f7.s4,'clim',[0 1.5]);
+    set(f7.s1,'clim',load_clim);
+    set(f7.s4,'clim',unload_clim);
     
     % loading colorbar
     f7.c1=colorbar(f7.s1,'horizontal');
@@ -736,8 +719,7 @@ if stress_calc==1
     f7.ct.Position(1:2)=[f7.s1.Position(1)+...
         (f7.s1.Position(3)-f7.ct.Position(3))/2 0.275];
     set(f7.ct,'horizontalalignment','center','string','Stress (MPa)',...
-        'edgecolor','none','backgroundcolor','none',...
-        'fontname',f7.s1.FontName);
+        'edgecolor','none','backgroundcolor','none','fontname',f7.s1.FontName);
     set(f7.s4,'position',f7.s1.Position,'xlim',f7.s1.XLim,'ylim',f7.s1.YLim,...
         'box','off','xcolor','none','ycolor','none','xtick',[],'ytick',[]);
     linkaxes([f7.s1 f7.s4],'xy');
@@ -758,6 +740,8 @@ if stress_calc==1
       
     % create custom colorbar axes for 2d histograms
     f7.s7=alphaColorbar_stacked(f7.s3,max1);
+    
+    % create colorbar labels
     xpos=10^(log10(f7.s7.XLim(2))/2);
     f7.t1=text(f7.s7,xpos,0.6,'other objects');
     set(f7.t1,'fontname',f7.s7.FontName,'horizontalalignment','center',...
@@ -770,6 +754,13 @@ if stress_calc==1
 end
 
 %% %%%%%%%%%%%%%%%%%%% figure 8 %%%%%%%%%%%%%%%%%%%%%
+% raw image (with no masking)
+
+% format figure
+f8=my_fig(8);
+f8.f.Position(3:4)=[340 330];
+axis(f8.s1,'image');
+
 copyobj(findall(f5.s1,'type','image'),f8.s1);% copy image frame
 set(f8.s1,'xtick',[],'ytick',[]);
 text(f8.s1,7,20,'1 mm','fontname',f8.s1.FontName);
@@ -778,6 +769,13 @@ center_axes(f8.s1);
 set(f8.s1,'layer','top');
 
 %% %%%%%%%%%%%%%%%%%%% figure 9 %%%%%%%%%%%%%%%%%%%%%
+% colormapping of loading and unloading regions
+
+% format figure
+f9=my_fig(9);
+f9.f.Position(3:4)=[340 330];
+f9.s2=copyobj(f9.s1,f9.f);
+
 % apparant, correlating uniaxial stress
 copyobj(findall(f5.s1,'type','image'),f9.s1);% copy image frame
 if stress_calc==1
@@ -801,6 +799,7 @@ f9.s2.Position=f9.s1.Position;
 f9.f.Name='Correlated uniaxial stress';
 
 %% %%%%%%%%%%%%%%%%%%% figure 10 %%%%%%%%%%%%%%%%%%%%
+f10=my_fig(10);
 plot(f10.s1,TTC2,ss2,'k-');
 xylabels(f10.s1,'total chromatic change','loading stress (MPa)');
 center_axes(f10.s1);
@@ -824,6 +823,9 @@ f11.f.Name='[MC] (%)';
 
 %% %%%%%%%%%%%%%%%%%%% figure 12 %%%%%%%%%%%%%%%%%%%%
 if stress_calc==1
+    f12=my_fig(12);
+    f12.f.Position(3:4)=[340 330];
+
     % Amount of stress relaxed for unloading pixels
     copyobj(findall(f5.s1,'type','image'),f12.s1);% copy image frame
     scatter3(f12.s1,IA(m1,9),IA(m1,8),m1_ps-m1_s,'filled','cdata',m1_ps-m1_s,...
@@ -836,6 +838,9 @@ end
 
 %% %%%%%%%%%%%%%%%%%%% figure 13 %%%%%%%%%%%%%%%%%%%%
 if stress_calc==1
+    f13=my_fig(13);
+    f13.f.Position(3:4)=[340 330];
+    
     % Peak loading stress for unloading pixels (loading history)
     copyobj(findall(f5.s1,'type','image'),f13.s1);% copy image frame
     scatter3(f13.s1,IA(m1,9),IA(m1,8),m1_ps,'filled','cdata',m1_ps,...
