@@ -1,7 +1,6 @@
 function parse_sp_crack02(filename,frame_n,varargin)
 % Author: Joshua Yeh
 % Date created: 2018-04-18
-% Updated on: 2018-05-15
 % 
 %% DESCRIPTION FOR UNLOADING ANALYSIS
 % This script accepts a video frame and analyzes the pixels in the frame.
