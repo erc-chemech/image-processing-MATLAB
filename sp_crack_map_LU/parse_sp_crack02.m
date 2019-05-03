@@ -25,9 +25,6 @@ function parse_sp_crack02(filename,frame_n,varargin)
     % 
     % 'ref_ROI': the region go interest in the reference frame
     %
-    % 'white_ROI': the region of interest representing the white area in
-    % the main frame
-    %
     % 'white_ref_ROI': the region of interest representing the white area
     % in the reference frame
     %
@@ -83,6 +80,13 @@ function parse_sp_crack02(filename,frame_n,varargin)
     % 'ED_unload': mat file containing data that converts unloading stress
     % values to energy density values
     %
+    % 'loading_fit_file': mat file that includes the fit objects required
+    % to construct the loading behavior on the color stress map
+    %
+    % 'csmfile': fig file of the color stress calibration map
+    %
+    % 'color_stress_map': mat file of the color stress calibration map
+    % 
 %% Parse input variables
 
 narginchk(1,inf);%check the number of input values
@@ -92,8 +96,6 @@ params.addParameter('skip',1,@(x) islogical(x)|x==1|x==0);
 params.addParameter('ref_frame',1,@(x) isnumeric(x));
 params.addParameter('ROI',[500 800 60 270],@(x) isnumeric(x)&numel(x)==4);
 params.addParameter('ref_ROI',[800 1000 250 300],...
-    @(x) isnumeric(x)&numel(x)==4);
-params.addParameter('white_ROI',[600 700 350 450],...
     @(x) isnumeric(x)&numel(x)==4);
 params.addParameter('white_ref_ROI',[800 1000 500 600],...
     @(x) isnumeric(x)&numel(x)==4);
@@ -116,6 +118,11 @@ params.addParameter('MCvps','MCvps_TN135_180430.mat');
 params.addParameter('MC_calc',0,@(x) isnumeric(x));
 params.addParameter('ED_calc',0,@(x) isnumeric(x));
 params.addParameter('ED_unload','');
+params.addParameter('loading_fit_file','TN135_loading_fits.mat',...
+    @(x) ischar(x));
+params.addParameter('csmfile','CSM_TN135.fig',@(x) ischar(x));
+params.addParameter('color_stress_map','TN135_color_stress_map.mat',...
+    @(x) ischar(x));
 params.parse(varargin{:});
 
 %Extract out values from parsed input
@@ -123,7 +130,6 @@ skip=params.Results.skip;
 ref_frame=params.Results.ref_frame;
 ROI=params.Results.ROI;
 ref_ROI=params.Results.ref_ROI;
-white_ROI=params.Results.white_ROI;
 white_ref_ROI=params.Results.white_ref_ROI;
 background_thresh=params.Results.background_thresh;
 dark_thresh=params.Results.dark_thresh;
@@ -140,6 +146,9 @@ MCvps=params.Results.MCvps;
 MC_calc=params.Results.MC_calc;
 ED_calc=params.Results.ED_calc;
 ED_unload=params.Results.ED_unload;
+loading_fit_file=params.Results.loading_fit_file;
+csmfile=params.Results.csmfile;
+color_stress_map=params.Results.color_stress_map;
 
 if video_mode==1
     visible='off';
@@ -157,7 +166,7 @@ else
     try
         load(['mat_files/UL_',name,'_',num2str(frame_n),'.mat']);
     catch
-        disp('mat file was not found, attempting to extract from file');
+        disp('mat_files was not found, attempting to extract from file');
         frame=extract_frames(filename,[ref_frame frame_n]);
         save(['mat_files/UL_',name,'_',num2str(frame_n),'.mat'],'frame');
     end
@@ -168,7 +177,7 @@ end
 
 %fits are based on data from: F:\Dropbox\ESPCI-Paris\My
 %Research\data\Yinjun\Cyclic loading\20180430\TN135_replot.m
-load('TN135_loading_fits.mat','TCCvGCC_load','temp_TCC_load_avg',...
+load(loading_fit_file,'TCCvGCC_load','temp_TCC_load_avg',...
     'temp_TCC_load_std','load_fit2_TN135');
 
 disp('Frame loaded!');
@@ -185,7 +194,6 @@ subimage=frame(2).CData(ROI(1):ROI(2),ROI(3):ROI(4),:);
 ref=frame(1).CData(ref_ROI(1):ref_ROI(2),ref_ROI(3):ref_ROI(4),:);
 
 % Define white refference area
-white=frame(2).CData(white_ROI(1):white_ROI(2),white_ROI(3):white_ROI(4),:);
 white_ref=frame(1).CData(white_ref_ROI(1):white_ref_ROI(2),...
     white_ref_ROI(3):white_ref_ROI(4),:);
 
@@ -260,7 +268,7 @@ TCC0=sqrt(RCC0.^2+GCC0.^2+BCC0.^2);
 
 % import the 0-iso stress line from color-stress map for TN135
 try delete(fcsm.f); catch; end
-fcsm.f=openfig('CSM_TN135.fig','invisible');
+fcsm.f=openfig(csmfile,'invisible');
 fcsm.xdata=get(findall(fcsm.f,'userdata','zero_stress'),'xdata');
 fcsm.ydata=get(findall(fcsm.f,'userdata','zero_stress'),'ydata');
 try delete(fcsm.f); catch; end
@@ -365,7 +373,7 @@ if MC_calc==1
 end
 
 if stress_calc==1
-    load('TN135_color_stress_map.mat','isrx','isry','stress_q2_TN135','urx',...
+    load(color_stress_map,'isrx','isry','stress_q2_TN135','urx',...
     'ury');
     isrx2=isrx(:);%reform to column array to speed up process
     isry2=isry(:);%reform to column array
@@ -530,20 +538,13 @@ f5=my_fig(5,{[1 1 1]},'marg_w',[0.01 0.01],'marg_h',[0.01 0.01],...
 f5.f.Alphamap=linspace(0,1,256);
 f5.f.Position(3:4)=[667 645];
 
-% Figure 6
-f6=my_fig(6,{[1 2 1] [1 2 2]},'visible',visible);
-f6.f.Alphamap=linspace(0,1,256);
-f6.f.Position(2:4)=[377 959 463];
-f6.s2.Position([2 4])=[0.4 0.55];
-f6.s3=copyobj(f6.s2,f6.f);
-uistack(f6.s3,'bottom');
-xylabels(f6.s2,'Green chromatic change','Total chromatic change');
 
 % Figure 7
 if stress_calc==1
     f7=my_fig(7,{[1 2 1] [1 2 2]});
     f7.f.Position(3:4)=[959 660];
     f7.s2.Position([2 4])=[0.4 0.55];
+    f7.s3=copyobj(f7.s2,f7.f);
     f7.s4=copyobj(f7.s1,f7.f);
     uistack(f7.s4,'top');
     xylabels(f7.s2,'Green chromatic change','Total chromatic change');
@@ -562,10 +563,6 @@ f9.s2=copyobj(f9.s1,f9.f);
 % Figure 10
 f10=my_fig(10);
 
-% Figure 11
-f11=my_fig(11);
-f11.f.Position(3:4)=[340 330];
-
 % Figure 12
 f12=my_fig(12);
 f12.f.Position(3:4)=[340 330];
@@ -574,9 +571,6 @@ f12.f.Position(3:4)=[340 330];
 f13=my_fig(13);
 f13.f.Position(3:4)=[340 330];
 
-% Figure 14
-f14=my_fig(14);
-f14.f.Position(3:4)=[340 330];
 
 % import the iso-stress lines for TN135
 try delete(fcsm.f); catch; end
@@ -683,7 +677,7 @@ f4.N_m3.ZData=ones(size(f4.N_m3.XData)).*100;
 
 
 %% %%%%%%%%%%%%%%%%%%% figure 5 %%%%%%%%%%%%%%%%%%%%%
-imagesc(f5.s1,uint8(rgb_correction(subimage,white,'simple',255)));
+imagesc(f5.s1,uint8(rgb_correction(subimage,white_ref,'simple',255)));
 plot(f5.s1,IA(m3,9),IA(m3,8),'b.');
 plot(f5.s1,IA(m1,9),IA(m1,8),'r.','tag','map');
 patch(f5.s1,[0 78.94 78.94 0 0],[5 5 25 25 5],'w','edgecolor','none',...
@@ -696,32 +690,12 @@ set(f5.s1,'box','off','xtick',[],'ytick',[],'xcolor','none',...
     'ycolor','none');
 
 
-%% %%%%%%%%%%%%%%%%%%% figure 6 %%%%%%%%%%%%%%%%%%%%%
 
-copyobj(get(f5.s1,'children'),f6.s1);% copy image frame
-axis(f6.s1,'image');
-f6.s1.Position(1)=0.07;
-set(findall(f6.s1,'type','patch'),'ydata',[5 5 35 35 5]);
-set(findall(f6.s1,'type','text'),'position',[40 10 0]);
-set(f6.s1,'xtick',[],'ytick',[],'xcolor','none','ycolor','none')
-
-copyobj(get(f4.s1,'children'),f6.s2);
-set(findall(f6.s2,'type','line','linestyle','-'),'parent',f6.s3);
-set(f6.s2,'xlim',[-0.04 0.04],'ylim',[0 0.08]);
-linkaxes([f6.s2 f6.s3],'xy');
-
-% colorbar
-f6.c3=colorbar(f6.s3,'horizontal');
-colormap(f6.s3,'summer');
-set(f6.c3,'position',[0.6048 0.175 0.3452 0.0461]);
-f6.c3.YLabel.String='Stress (MPa)';
-set(f6.s3,'clim',clim_iso_stress,'position',f6.s2.Position,...
-    'xlim',[-0.06 0.02]);
 
 %% %%%%%%%%%%%%%%%%%%% figure 7 %%%%%%%%%%%%%%%%%%%%%
 
 if stress_calc==1
-    copyobj(findall(f6.s1,'type','image'),f7.s1);% copy image frame
+    copyobj(findall(f5.s1,'type','image'),f7.s1);% copy image frame
     axis(f7.s1,'image');
     f7.s1.Position(1)=0.07;
     set(f7.s1,'xtick',[],'ytick',[],'xcolor','none','ycolor','none')
@@ -763,13 +737,12 @@ if stress_calc==1
         (f7.s1.Position(3)-f7.ct.Position(3))/2 0.275];
     set(f7.ct,'horizontalalignment','center','string','Stress (MPa)',...
         'edgecolor','none','backgroundcolor','none',...
-        'fontname','Microsoft YaHei Light');
+        'fontname',f7.s1.FontName);
     set(f7.s4,'position',f7.s1.Position,'xlim',f7.s1.XLim,'ylim',f7.s1.YLim,...
         'box','off','xcolor','none','ycolor','none','xtick',[],'ytick',[]);
     linkaxes([f7.s1 f7.s4],'xy');
     
     % chromatic-stress mapping
-    f7.s3=copyobj(f6.s3,f7.f);
     copyobj(get(f4.s1,'children'),f7.s2);
     delete(findall(f7.s2,'type','line','linestyle','-'));
     set(f7.s2,'xlim',[-0.04 0.04],'ylim',[0 0.08]);
@@ -779,11 +752,8 @@ if stress_calc==1
     colormap(f7.s3,'summer');
     f7.c3.YLabel.String='Stress (MPa)';
     set(f7.s3,'clim',clim_iso_stress,'position',f7.s2.Position,...
-        'xlim',[-0.06 0.02]);
-    f7.s3.Position(1)=0.55;
-    f7.s3.Position(2)=0.45;
-    f7.s3.Position(3)=0.3;
-    f7.s3.Position(4)=0.5;
+        'xlim',[-0.06 0.02],'ylim',[0 0.15]);
+    f7.s3.Position=[0.55 0.45 0.3 0.5];
     f7.s2.Position=f7.s3.Position;
       
     % create custom colorbar axes for 2d histograms
@@ -796,12 +766,11 @@ if stress_calc==1
     set(f7.t2,'fontname',f7.s7.FontName,'horizontalalignment','center');
     f7.t3=text(f7.s7,xpos,2.6,'loading');
     set(f7.t3,'fontname',f7.s7.FontName,'horizontalalignment','center');
-    
-%     linkaxes([f7.s3 f7.s5 f7.s6],'xy');
+
 end
 
 %% %%%%%%%%%%%%%%%%%%% figure 8 %%%%%%%%%%%%%%%%%%%%%
-copyobj(findall(f6.s1,'type','image'),f8.s1);% copy image frame
+copyobj(findall(f5.s1,'type','image'),f8.s1);% copy image frame
 set(f8.s1,'xtick',[],'ytick',[]);
 text(f8.s1,7,20,'1 mm','fontname',f8.s1.FontName);
 plot(f8.s1,[7 7+px2mm],[10 10],'k-','linewidth',2);
@@ -810,7 +779,7 @@ set(f8.s1,'layer','top');
 
 %% %%%%%%%%%%%%%%%%%%% figure 9 %%%%%%%%%%%%%%%%%%%%%
 % apparant, correlating uniaxial stress
-copyobj(findall(f6.s1,'type','image'),f9.s1);% copy image frame
+copyobj(findall(f5.s1,'type','image'),f9.s1);% copy image frame
 if stress_calc==1
     copyobj(findall(f7.s1,'type','scatter'),f9.s1);
     copyobj(findall(f7.s4,'type','scatter'),f9.s2);
@@ -820,7 +789,7 @@ end
 axis(f9.s1,'image');
 axis(f9.s2,'image');
 set(f9.s1,'xtick',[],'ytick',[],'clim',f7.s1.CLim);
-text(f9.s1,7,20,'1 mm','fontname',f8.s1.FontName);
+text(f9.s1,7,25,'1 mm','fontname',f8.s1.FontName);
 plot(f9.s1,[7 7+px2mm],[10 10],'k-','linewidth',2);
 center_axes(f9.s1);
 set(f9.s1,'layer','top');
@@ -833,13 +802,16 @@ f9.f.Name='Correlated uniaxial stress';
 
 %% %%%%%%%%%%%%%%%%%%% figure 10 %%%%%%%%%%%%%%%%%%%%
 plot(f10.s1,TTC2,ss2,'k-');
-xylabels(f10.s1,'Total chromatic change','Stress (MPa)');
+xylabels(f10.s1,'total chromatic change','loading stress (MPa)');
 center_axes(f10.s1);
 
 %% %%%%%%%%%%%%%%%%%%% figure 11 %%%%%%%%%%%%%%%%%%%%
 % [MC] mapping
 if MC_calc==1
-    copyobj(findall(f6.s1,'type','image'),f11.s1);% copy image frame
+    f11=my_fig(11);
+    f11.f.Position(3:4)=[340 330];
+    
+    copyobj(findall(f5.s1,'type','image'),f11.s1);% copy image frame
     scatter3(f11.s1,IA(m1,9),IA(m1,8),m1_mc,'filled','cdata',m1_mc,...
         'sizedata',5,'markeredgecolor','none');
     scatter3(f11.s1,IA(m3,9),IA(m3,8),m3_mc,'filled','cdata',m3_mc,...
@@ -853,7 +825,7 @@ f11.f.Name='[MC] (%)';
 %% %%%%%%%%%%%%%%%%%%% figure 12 %%%%%%%%%%%%%%%%%%%%
 if stress_calc==1
     % Amount of stress relaxed for unloading pixels
-    copyobj(findall(f6.s1,'type','image'),f12.s1);% copy image frame
+    copyobj(findall(f5.s1,'type','image'),f12.s1);% copy image frame
     scatter3(f12.s1,IA(m1,9),IA(m1,8),m1_ps-m1_s,'filled','cdata',m1_ps-m1_s,...
         'sizedata',5,'markeredgecolor','none');
     axis(f12.s1,'image');
@@ -865,7 +837,7 @@ end
 %% %%%%%%%%%%%%%%%%%%% figure 13 %%%%%%%%%%%%%%%%%%%%
 if stress_calc==1
     % Peak loading stress for unloading pixels (loading history)
-    copyobj(findall(f6.s1,'type','image'),f13.s1);% copy image frame
+    copyobj(findall(f5.s1,'type','image'),f13.s1);% copy image frame
     scatter3(f13.s1,IA(m1,9),IA(m1,8),m1_ps,'filled','cdata',m1_ps,...
         'sizedata',5,'markeredgecolor','none');
     axis(f13.s1,'image');
@@ -877,7 +849,10 @@ end
 %% %%%%%%%%%%%%%%%%%%% figure 14 %%%%%%%%%%%%%%%%%%%%
 % Energy density plots
 if ED_calc==1&&stress_calc==1
-    copyobj(findall(f6.s1,'type','image'),f14.s1);% copy image frame
+    f14=my_fig(14);
+    f14.f.Position(3:4)=[340 330];
+    
+    copyobj(findall(f5.s1,'type','image'),f14.s1);% copy image frame
     scatter3(f14.s1,IA(m1,9),IA(m1,8),m1_ed,'filled','cdata',m1_ed,...
         'sizedata',5,'markeredgecolor','none');
     scatter3(f14.s1,IA(m3,9),IA(m3,8),m3_ed,'filled','cdata',m3_ed,...
