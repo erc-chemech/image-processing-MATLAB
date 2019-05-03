@@ -500,13 +500,6 @@ disp('Processing finished');
 
 %% PLOT THE RESULTS
 
-% import the iso-stress lines for TN135
-try delete(fcsm.f); catch; end
-fcsm.f=openfig('CSM_TN135.fig','invisible');
-fcsm.s0=findall(fcsm.f,'type','axes');
-clim_iso_stress=fcsm.s0.CLim;
-delete(findall(fcsm.f,'color',ones(1,3).*0.7));
-try delete(fcsm.f); catch; end
 
 %% %%%%%%%%%%%%%%%%%%% figure 1 %%%%%%%%%%%%%%%%%%%%%
 % Raw extracted frame (initial reference area and raw subimage w/ mask)
@@ -564,7 +557,15 @@ set(f3.s3,'position',f3.s1.Position,'color','none','box','off',...
     'xcolor','none','ycolor','none','view',f1.s1.View);
 
 % copy color stress calibration map
+
+% import the iso-stress lines
+try delete(fcsm.f); catch; end
+fcsm.f=openfig('CSM_TN135.fig','invisible');
+fcsm.s0=findall(fcsm.f,'type','axes');
+clim_iso_stress=fcsm.s0.CLim;
+delete(findall(fcsm.f,'color',ones(1,3).*0.7));
 f3.csm=copyobj(findall(fcsm.s0(1),'type','line'),f3.s1);
+try delete(fcsm.f); catch; end
 
 % Plot loading line
 TCC_load=linspace(0,0.133,100);
@@ -617,7 +618,15 @@ xylabels(f4.s1,'Green chromatic change','Total chromatic change');
 set(f4.s1,'xlim',[-0.04 0.04],'ylim',[0 0.08]);
 
 % copt color-stress calibration map
+
+% import the iso-stress lines
+try delete(fcsm.f); catch; end
+fcsm.f=openfig('CSM_TN135.fig','invisible');
+fcsm.s0=findall(fcsm.f,'type','axes');
+clim_iso_stress=fcsm.s0.CLim;
+delete(findall(fcsm.f,'color',ones(1,3).*0.7));
 f4.csm=copyobj(findall(fcsm.s0(1),'type','line'),f4.s1);
+try delete(fcsm.f); catch; end
 
 plot(f4.s1,polyval(TCCvGCC_load,TCC_load_n),TCC_load,'k--');
 
@@ -708,8 +717,7 @@ if stress_calc==1
     
     % unloading colorbar
     f7.c4=colorbar(f7.s4,'horizontal');
-    f7.c4.Position(1:4)=[f7.s1.Position(1) 0.1227,...
-        f7.s1.Position(3) 0.05];
+    f7.c4.Position(1:4)=[f7.s1.Position(1) 0.1227,f7.s1.Position(3) 0.05];
     set(f7.c4,'yaxislocation','top','yticklabel',[],'tickdir','both',...
         'box','off','limits',[0 6]);
     f7.c4.YLabel.String='unloaded';
@@ -726,7 +734,7 @@ if stress_calc==1
     
     % chromatic-stress mapping
     copyobj(get(f4.s1,'children'),f7.s2);
-    delete(findall(f7.s2,'type','line','linestyle','-'));
+%     delete(findall(f7.s2,'type','line','linestyle','-'));
     set(f7.s2,'xlim',[-0.04 0.04],'ylim',[0 0.08]);
     uistack(f7.s3,'bottom');
     linkaxes([f7.s2 f7.s3],'xy');
