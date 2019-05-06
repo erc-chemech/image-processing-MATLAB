@@ -90,6 +90,8 @@ function parse_sp_crack02(filename,frame_n,varargin)
     %
     % 'unload_clim': colorbar scale limits for the unloading stresses
     %
+    % 'ss_file': stress-extension data on the video time axis (xls file).
+    %     
 %% Parse input variables
 
 narginchk(1,inf);%check the number of input values
@@ -128,6 +130,7 @@ params.addParameter('color_stress_map','TN135_color_stress_map.mat',...
     @(x) ischar(x));
 params.addParameter('load_clim',[0 6],@(x) isnumeric(x));
 params.addParameter('unload_clim',[0 2],@(x) isnumeric(x));
+params.addParameter('ss_file',[],@(x) ischar(x));
 params.parse(varargin{:});
 
 %Extract out values from parsed input
@@ -156,11 +159,41 @@ csmfile=params.Results.csmfile;
 color_stress_map=params.Results.color_stress_map;
 load_clim=params.Results.load_clim;
 unload_clim=params.Results.unload_clim;
+ss_file=params.Results.ss_file;
 
 if video_mode==1
     visible='off';
 else
     visible='on';
+end
+
+% extract stress strain data
+if ~isempty(ss_file)
+    [num,txt,raw]=xlsread(ss_file);
+    
+    %get stress value
+    k=find(strcmp(txt,'Stress (MPa)'));
+    [kr,kc]=ind2sub(size(txt),k);
+    m_stress=[raw{kr+1:end,kc}]';
+    
+    %get time value
+    k=find(strcmp(txt,'Time (s)'));
+    [kr,kc]=ind2sub(size(txt),k);
+    m_time=[raw{kr+1:end,kc}]';
+    
+    %get lambda value
+    k=find(strcmp(txt,'Lambda'));
+    [kr,kc]=ind2sub(size(txt),k);
+    m_lam=[raw{kr+1:end,kc}]';
+    
+    %get abs frame number
+    k=find(strcmp(txt,'frame #'));
+    [kr,kc]=ind2sub(size(txt),k);
+    frame_idx=[raw{kr+1:end,kc}]';
+    ii_fn=find(frame_idx==frame_n);
+    
+    notched_stress=m_stress(ii_fn);
+    notched_lam=m_lam(ii_fn);
 end
 
 %% LOAD VIDEO AND FITS
@@ -668,9 +701,7 @@ plot(f5.s1,IA(m3,9),IA(m3,8),'b.');
 plot(f5.s1,IA(m1,9),IA(m1,8),'r.','tag','map');
 patch(f5.s1,[0 78.94 78.94 0 0],[5 5 25 25 5],'w','edgecolor','none',...
     'facealpha',0.8);
-plot(f5.s1,[0 48.94]+15,[10 10],'k-','linewidth',4);
-text(f5.s1,32.25+10,10,'1 mm','horizontalalignment','center',...
-    'verticalalignment','bottom');
+scalebar(f5.s1,px2mm,notched_lam);
 axis(f5.s1,'image');
 set(f5.s1,'box','off','xtick',[],'ytick',[],'xcolor','none',...
     'ycolor','none');
@@ -678,6 +709,7 @@ set(f5.s1,'box','off','xtick',[],'ytick',[],'xcolor','none',...
 %% %%%%%%%%%%%%%%%%%%% figure 7 %%%%%%%%%%%%%%%%%%%%%
 
 if stress_calc==1
+    
     % Create the figure and format it
     f7=my_fig(7,{[1 2 1] [1 2 2]});
     f7.f.Position(3:4)=[959 660];
@@ -700,6 +732,14 @@ if stress_calc==1
         'sizedata',5,'markeredgecolor','none');
     colormap(f7.s1,flipud(winter));
     axis(f7.s4,'image');
+    
+    z_load=px_coord2image(IA(m3,8),IA(m3,9),m3_s,size(ref_corr));
+    far_field=nanmean(nanmean(z_load(:,end-10:end)));
+    disp(['far field stress (MPa): ',num2str(far_field)]);
+    
+    if ~isempty(ss_file)
+        disp(['notched stress (MPa): ',num2str(notched_stress)]);
+    end
     
     % find the stress associated at the TCC threshold
     set(f7.s1,'clim',load_clim);
@@ -744,6 +784,7 @@ if stress_calc==1
         'xlim',[-0.06 0.02],'ylim',[0 0.15]);
     f7.s3.Position=[0.55 0.45 0.3 0.5];
     f7.s2.Position=f7.s3.Position;
+    scalebar(f7.s1,px2mm,notched_lam);
       
     % create custom colorbar axes for 2d histograms
     f7.s7=alphaColorbar_stacked(f7.s3,max1);
@@ -770,8 +811,7 @@ axis(f8.s1,'image');
 
 copyobj(findall(f5.s1,'type','image'),f8.s1);% copy image frame
 set(f8.s1,'xtick',[],'ytick',[]);
-text(f8.s1,7,20,'1 mm','fontname',f8.s1.FontName);
-plot(f8.s1,[7 7+px2mm],[10 10],'k-','linewidth',2);
+scalebar(f8.s1,px2mm,notched_lam);
 center_axes(f8.s1);
 set(f8.s1,'layer','top');
 
@@ -794,8 +834,7 @@ end
 axis(f9.s1,'image');
 axis(f9.s2,'image');
 set(f9.s1,'xtick',[],'ytick',[],'clim',f7.s1.CLim);
-text(f9.s1,7,25,'1 mm','fontname',f8.s1.FontName);
-plot(f9.s1,[7 7+px2mm],[10 10],'k-','linewidth',2);
+scalebar(f9.s1,px2mm,notched_lam);
 center_axes(f9.s1);
 set(f9.s1,'layer','top');
 set(f9.s2,'xtick',[],'ytick',[],'clim',f7.s4.CLim,'xlim',f9.s1.XLim,...
@@ -825,8 +864,10 @@ if MC_calc==1
     axis(f11.s1,'image');
     set(f11.s1,'xtick',[],'ytick',[],'layer','top','clim',[0 5]);
     center_axes(f11.s1);
+    f11.f.Name='[MC] (%)';
+    scalebar(f11.s1,px2mm,notched_lam);
 end
-f11.f.Name='[MC] (%)';
+
 
 %% %%%%%%%%%%%%%%%%%%% figure 12 %%%%%%%%%%%%%%%%%%%%
 if stress_calc==1
@@ -840,6 +881,7 @@ if stress_calc==1
     axis(f12.s1,'image');
     set(f12.s1,'xtick',[],'ytick',[],'layer','top','clim',[2 5]);
     f12.f.Name='Amount stress was relaxed (unloading pxs)';
+    scalebar(f12.s1,px2mm,notched_lam)
     center_axes(f12.s1);
 end
 
@@ -855,6 +897,7 @@ if stress_calc==1
     axis(f13.s1,'image');
     set(f13.s1,'xtick',[],'ytick',[],'layer','top','clim',[4 7]);
     f13.f.Name='Peak stress of unloading pixels';
+    scalebar(f13.s1,px2mm,notched_lam)
     center_axes(f13.s1);
 end
 
@@ -872,6 +915,7 @@ if ED_calc==1&&stress_calc==1
     axis(f14.s1,'image');
     set(f14.s1,'xtick',[],'ytick',[],'layer','top','clim',[0 2]);
     f14.f.Name='Energy density mapping';
+    scalebar(f14.s1,px2mm,notched_lam)
     center_axes(f14.s1);
 end
 
@@ -882,6 +926,8 @@ if export_var==1
 end
 
 disp(['fini: ',datestr(clock)]);
+
+%% USEFUL FCNS
 
 function out_var(varargin)
 % This function output the function variable space to the base workspace
@@ -906,3 +952,9 @@ function y=mypoly2(x,p)
 y=nan(size(x));    
 y(x<p(2))=0;
 y(x>=p(2))=p(1).*(x(x>=p(2))-p(2)).^2;
+
+function scalebar(ax,px2mm,notched_lam)
+text(ax,7+px2mm/2,40,['\lambda = ',num2str(notched_lam,2)],...
+    'horizontalalignment','center');
+text(ax,7+px2mm/2,20,'1 mm','horizontalalignment','center');
+plot(ax,[7 7+px2mm],[10 10],'k-','linewidth',2);
