@@ -649,6 +649,7 @@ f4.f.Alphamap=linspace(0,1,256);
 set(f4.f,'name','Color mapping of activated sample area');
 xylabels(f4.s1,'Green chromatic change','Total chromatic change');
 set(f4.s1,'xlim',[-0.04 0.04],'ylim',[0 0.08]);
+axis(f4.s1,'image');
 
 % copt color-stress calibration map
 
@@ -716,6 +717,8 @@ if stress_calc==1
     f7.s2.Position([2 4])=[0.4 0.55];
     f7.s3=copyobj(f7.s2,f7.f);
     f7.s4=copyobj(f7.s1,f7.f);
+    axis(f7.s2,'image');
+    axis(f7.s3,'image');
     uistack(f7.s4,'top');
     xylabels(f7.s2,'Green chromatic change','Total chromatic change');
     
@@ -774,14 +777,13 @@ if stress_calc==1
     
     % chromatic-stress mapping
     copyobj(get(f4.s1,'children'),f7.s2);
-    set(f7.s2,'xlim',[-0.04 0.04],'ylim',[0 0.08]);
     uistack(f7.s3,'bottom');
     linkaxes([f7.s2 f7.s3],'xy');
     f7.c3=colorbar(f7.s3);
     colormap(f7.s3,'summer');
     f7.c3.YLabel.String='Stress (MPa)';
     set(f7.s3,'clim',clim_iso_stress,'position',f7.s2.Position,...
-        'xlim',[-0.06 0.02],'ylim',[0 0.15]);
+        'xlim',f4.s1.XLim,'ylim',f4.s1.YLim);
     f7.s3.Position=[0.55 0.45 0.3 0.5];
     f7.s2.Position=f7.s3.Position;
     scalebar(f7.s1,px2mm,notched_lam);
@@ -954,7 +956,7 @@ y(x<p(2))=0;
 y(x>=p(2))=p(1).*(x(x>=p(2))-p(2)).^2;
 
 function scalebar(ax,px2mm,notched_lam)
-text(ax,7+px2mm/2,40,['\lambda = ',num2str(notched_lam,2)],...
+text(ax,10+px2mm/2,40,['\lambda = ',num2str(notched_lam,3)],...
     'horizontalalignment','center');
-text(ax,7+px2mm/2,20,'1 mm','horizontalalignment','center');
-plot(ax,[7 7+px2mm],[10 10],'k-','linewidth',2);
+text(ax,10+px2mm/2,20,'1 mm','horizontalalignment','center');
+plot(ax,[10 10+px2mm],[10 10],'k-','linewidth',2);
