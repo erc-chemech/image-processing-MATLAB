@@ -76,7 +76,7 @@ function parse_sp_crack02(filename,frame_n,varargin)
     %
     % 'ED_calc': toggle for calculating the energy density (0 is default)
     %
-    % 'ED_unload': mat file containing data that converts unloading stress
+    % 'ED_file': mat file containing data that converts unloading stress
     % values to energy density values
     %
     % 'loading_fit_file': mat file that includes the fit objects required
@@ -122,7 +122,7 @@ params.addParameter('px2mm',38.94,@(x) isnumeric(x));
 params.addParameter('MCvps','MCvps_TN135_180430.mat');
 params.addParameter('MC_calc',0,@(x) isnumeric(x));
 params.addParameter('ED_calc',0,@(x) isnumeric(x));
-params.addParameter('ED_unload','');
+params.addParameter('ED_file','');
 params.addParameter('loading_fit_file','TN135_loading_fits.mat',...
     @(x) ischar(x));
 params.addParameter('csmfile','CSM_TN135.fig',@(x) ischar(x));
@@ -153,7 +153,7 @@ px2mm=params.Results.px2mm;
 MCvps=params.Results.MCvps;
 MC_calc=params.Results.MC_calc;
 ED_calc=params.Results.ED_calc;
-ED_unload=params.Results.ED_unload;
+ED_file=params.Results.ED_file;
 loading_fit_file=params.Results.loading_fit_file;
 csmfile=params.Results.csmfile;
 color_stress_map=params.Results.color_stress_map;
@@ -428,7 +428,8 @@ if stress_calc==1
     m1_s=nan(numel(m1),1);%variable containing stress associated with unloading
     m1_ps=m1_s;%variable containing the peak stress associated with unloading
     m1_mc=m1_s;%variable containing the [MC] associated with the peak loading
-    m1_ed=m1_s;%variable containing the strain energy density of unload. px.
+    m1_eed=m1_s;%the elastic strain energy density of unload. px.
+    m1_ded=m1_s;%dissipated energy density of unloading px.
     
     % process unloading points
     for dum=1:numel(m1)
@@ -451,36 +452,16 @@ if stress_calc==1
             m1_mc(dum)=mypoly2(m1_ps(dum),MCvps0.MCvps);%MC conc (%)
         end
         
-        % Convert stress values to energy density values
+        % Convert stress values to elastic energy density values
         if ED_calc==1
-            ED_data=load(ED_unload);%load the mat needed to perform calc.
-            psq=m1_ps(dum);%peak stress associated with unloading (MPa)
             
-            % det. unloading fit parameters for current peak stress value
-            par_q1=nan(numel(fieldnames(ED_data.UPMF)),1);
-            for dum2=1:numel(par_q1)
-                par_q1(dum2)=ED_data.UPMF.(['order',num2str(dum2-1)])(psq);
-            end
+            %load the mat file needed to perform calc.
+            ED_data=load(ED_file,'UE','LE','ps');
             
-            
-            % build interpolated unloading stress vs. \lambda curve
-            unload_LAM=linspace(1,ED_data.load_fit2(psq),1000)';% lambda
-            
-            % create normalized lambda for fit based on normalized xdata
-            unload_LAM_n=(unload_LAM-ED_data.f_Ux_mean(psq))./...
-                ED_data.f_Ux_std(psq);
-            %interp. unload. stress array
-            unload_STRESS=polyval(par_q1,unload_LAM_n);
-            
-            
-            % find the associated \lambda on the unloading curve based on
-            % the unloading pixel's current stress
-            del=abs(unload_STRESS-m1_s(dum));
-            uu1=find(del==min(del));
-            
-            % Calculate strain energy density based on numerical integration
-            m1_ed(dum)=trapz(unload_LAM(1:uu1),unload_STRESS(1:uu1));
-            
+            % use the peak stress data to deduce what the elastic energy
+            % density should be
+            m1_eed(dum)=spline(ED_data.ps,ED_data.UE,m1_ps(dum));
+            m1_ded(dum)=spline(ED_data.ps,ED_data.LE-ED_data.UE,m1_ps(dum));
         end
 
         if mod(dum,1e4)==0%update user on status
@@ -492,13 +473,8 @@ if stress_calc==1
     disp('Associating loading points to stresses');
     m3_s=nan(numel(m3),1);%variable containing stress associated with loading
     m3_mc=m3_s;%variable containing MC concentration (calc from loading stress)
-    m3_ed=m3_s;%variable containing the strain energy density from load. pxs.
-    
-    % If energy density will be calc., construct stress-lambda curves
-    if ED_calc==1
-        load_LAM=linspace(1,2.5,1e3);%lambda for loading curve
-        load_STRESS=ED_data.load_fit(load_LAM);%loading stress (MPa)
-    end
+    m3_eed=m3_s;% the strain elastic energy density from load. pxs.
+    m3_ded=m3_s;% the dissipated energy density from load. pxs.
     
     % process loading points
     for dum=1:numel(m3)
@@ -511,12 +487,11 @@ if stress_calc==1
             m3_mc(dum)=mypoly2(m3_s(dum),MCvps0.MCvps);%MC conc (%)
         end
         
-        % Convert stress values to energy density values
+        % Convert stress values to elastic energy density values
         if ED_calc==1
-            
-            del=abs(load_STRESS-m3_s(dum));
-            uu2=find(del==min(del));
-            m3_ed(dum)=trapz(load_LAM(1:uu2),load_STRESS(1:uu2));%energy density
+            ED_data=load(ED_file,'UE','LE','ps');
+            m3_eed(dum)=spline(ED_data.ps,ED_data.UE,m3_s(dum));
+            m3_ded(dum)=spline(ED_data.ps,ED_data.LE-ED_data.UE,m3_s(dum));
         end
         
         if mod(dum,1e4)==0%update user on status
@@ -910,15 +885,32 @@ if ED_calc==1&&stress_calc==1
     f14.f.Position(3:4)=[340 330];
     
     copyobj(findall(f5.s1,'type','image'),f14.s1);% copy image frame
-    scatter3(f14.s1,IA(m1,9),IA(m1,8),m1_ed,'filled','cdata',m1_ed,...
+    scatter3(f14.s1,IA(m1,9),IA(m1,8),m1_eed,'filled','cdata',m1_eed,...
         'sizedata',5,'markeredgecolor','none');
-    scatter3(f14.s1,IA(m3,9),IA(m3,8),m3_ed,'filled','cdata',m3_ed,...
+    scatter3(f14.s1,IA(m3,9),IA(m3,8),m3_eed,'filled','cdata',m3_eed,...
         'sizedata',5,'markeredgecolor','none');
     axis(f14.s1,'image');
     set(f14.s1,'xtick',[],'ytick',[],'layer','top','clim',[0 2]);
-    f14.f.Name='Energy density mapping';
+    f14.f.Name='Elastic energy density mapping';
     scalebar(f14.s1,px2mm,notched_lam)
     center_axes(f14.s1);
+end
+
+%% %%%%%%%%%%%%%%%%%%% figure 15 %%%%%%%%%%%%%%%%%%%%
+if ED_calc==1&&stress_calc==1
+    f15=my_fig(15);
+    f15.f.Position(3:4)=[340 330];
+    
+    copyobj(findall(f5.s1,'type','image'),f15.s1);% copy image frame
+    scatter3(f15.s1,IA(m1,9),IA(m1,8),m1_ded,'filled','cdata',m1_ded,...
+        'sizedata',5,'markeredgecolor','none');
+    scatter3(f15.s1,IA(m3,9),IA(m3,8),m3_ded,'filled','cdata',m3_ded,...
+        'sizedata',5,'markeredgecolor','none');
+    axis(f15.s1,'image');
+    set(f15.s1,'xtick',[],'ytick',[],'layer','top','clim',[0 2]);
+    f15.f.Name='Dissipated energy density mapping';
+    scalebar(f15.s1,px2mm,notched_lam)
+    center_axes(f15.s1);
 end
 
 %% Export function workspace to base workspace

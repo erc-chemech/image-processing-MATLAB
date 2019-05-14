@@ -82,12 +82,12 @@ disp('mech data loaded');
 %% perform farfield color analysis
 
 % allocate arrays
-RCC=nan(numel(frames),1);
-GCC=RCC;
-BCC=RCC;
-RC=RCC;
-GC=RCC;
-BC=RCC;
+RCC=nan(numel(frames),1);%red chromatic change
+GCC=RCC;%green chromatic change
+BCC=RCC;%blue chromatic change
+RC=RCC;%red chromaticity
+GC=RCC;%green chromaticity
+BC=RCC;%blue chromaticity
 time_store=RCC;
 
 count1=1;% Counter counting the iteration for each while loop

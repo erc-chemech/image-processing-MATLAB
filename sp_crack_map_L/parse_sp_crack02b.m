@@ -83,20 +83,12 @@ function parse_sp_crack02b(filename,frame_n,varargin)
     %
     % 'Ires': image resolution in px2mm
     %
-    % 'map_value': stress in value (scalar) ('stress') or the energy
-    % density ('energy_density')
-    %
     % 'calc_true_stress': toggle for calc. the true stress map (do not
     % calc. 0    or    calc true stress 1)
     %
     % 'true_stress_mat': mat file associated with calculating the true
     % stress. This mat file must contain a variable named 'TS_NS', which is
     % a fit object correlating true stress vs. nominal stress.
-    %
-    % 'corr_factor': a correction factor that takes into account the diff.
-    % distance between the camera between the calibration and fracture exp/
-    %
-    % 'S2E_conversion': file that converts stresses to energy density
     %
     % 'm_file': mechanical data (xls file) generated recalc_lambda fcn
     %
@@ -135,11 +127,8 @@ params.addParameter('CSMFile','CSM_TN135.fig', @(x) ischar(x));
 params.addParameter('res',1e-3,@(x) isnumeric(x));
 params.addParameter('max',100,@(x) isnumeric(x)&x>0);
 params.addParameter('Ires',38.70,@(x) isnumeric(x));
-params.addParameter('S2E_conversion','../G matching/TN135_E.mat');
-params.addParameter('map_value','stress');
 params.addParameter('calc_true_stress',0,@(x) islogical(x)|x==1|x==0);
 params.addParameter('true_stress_mat','',@(x) ischar(x));
-params.addParameter('corr_factor',1,@(x) isnumeric(x));
 params.addParameter('m_file',[],@(x) ischar(x));
 params.addParameter('rotate',0,@(x) isnumeric(x));
 params.addParameter('climm',[],@(x) isnumeric(x));
@@ -166,11 +155,8 @@ RCC_thresh=params.Results.RCC_thresh;
 res=params.Results.res;
 max1=params.Results.max;
 Ires=params.Results.Ires;
-S2E_conversion=params.Results.S2E_conversion;
-map_value=params.Results.map_value;
 calc_ts=params.Results.calc_true_stress;
 ts_mat=params.Results.true_stress_mat;
-corr_factor=params.Results.corr_factor;
 m_file=params.Results.m_file;
 rot=params.Results.rotate;
 climm_user=params.Results.climm;
@@ -307,9 +293,9 @@ end
 
 % Calculate chromatic change
 % main frame
-RCC=(R_ratio-nanmean(R_ratio0(:))).*corr_factor;
-GCC=(G_ratio-nanmean(G_ratio0(:))).*corr_factor;
-BCC=(B_ratio-nanmean(B_ratio0(:))).*corr_factor;
+RCC=(R_ratio-nanmean(R_ratio0(:)));
+GCC=(G_ratio-nanmean(G_ratio0(:)));
+BCC=(B_ratio-nanmean(B_ratio0(:)));
 
 % reference frame
 RCC0=R_ratio0-nanmean(R_ratio0(:));
@@ -368,7 +354,6 @@ end
 m3=find(IA(:,5)==3);%indices associated with loading color change
 m2=find(IA(:,5)==2);%indices associated with sample background
 m0=find(IA(:,5)==0);%indices not associated with noise/loading color change
-nan1=find(isnan(IA(:,5)));%indices associated with background
 
 % NOISE FILTERING
 if noise_filter==1%if flag is turned on, apply a noise filter to the parsed pxs
@@ -399,7 +384,6 @@ if stress_calc==1
 
     disp('Associating loading points to stresses');
     m3_s=nan(numel(m3),1);%var. containing nominal stress assoc. w/ loading
-    m3_E=nan(numel(m3),1);%var. containing energy density values
     
     if calc_ts==1%if toggle for calc. true stress is turned on
         try
@@ -412,15 +396,11 @@ if stress_calc==1
             disp('calc_ts toggle variable is set to 0');
         end
     end
-    
-    % load mat file needed to convert nominal stress to energy density
-    S2E=load(S2E_conversion);
-    
+       
     % process loading points
     for dum=1:numel(m3)
         ii=d_index(m3(dum));%index of BCC pt closest to loading curve
         m3_s(dum)=polyval(LFF.stressvBCC,BCC_load(ii));%nominal stress in MPa
-        m3_E(dum)=spline(S2E.stress,S2E.E,m3_s(dum));%energy density in MJ/m^3
         
         if calc_ts==1%det. true stress (MPa) based on correl. w/ nominal stress
             m3_ts(dum)=TS_NS(m3_s(dum));%true stress in MPa
@@ -438,30 +418,6 @@ end
 disp('Processing finished');
 
 %% PLOT THE RESULTS
-
-% Declare figure handles
-
-
-
-
-% Figure 3
-
-
-% Figure 4
-
-
-% Figure 5
-
-
-% Figure 6
-
-
-% Figure 7
-
-
-% Figure 8
-
-% xylabels(f8.s1,'Blue chromatic change','Red chromatic change');
 
 %% %%%%%%%%%%%%%%%%%%% figure 1 %%%%%%%%%%%%%%%%%%%%%
 
@@ -600,20 +556,14 @@ if stress_calc==1
     set(f6.s1,'xtick',[],'ytick',[])
 
     % Plot chromatic coordinates on the image frame
-    if strcmp(map_value,'stress')
-        if calc_ts==0
-            m3_m=m3_s;
-            climm=[2 6];
-            strm='nominal stress (MPa)';
-        elseif calc_ts==1
-            m3_m=m3_ts;
-            climm=[2 8];
-            strm='true stress (MPa)';
-        end
-    elseif strcmp(map_value,'energy_density')
-        m3_m=m3_E;
-        climm=[0.5 1.5];
-        strm='energy density (MPa)';
+    if calc_ts==0
+        m3_m=m3_s;
+        climm=[2 6];
+        strm='nominal stress (MPa)';
+    elseif calc_ts==1
+        m3_m=m3_ts;
+        climm=[2 8];
+        strm='true stress (MPa)';
     end
     
     if ~isempty(climm_user)
