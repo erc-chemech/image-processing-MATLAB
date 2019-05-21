@@ -1,3 +1,8 @@
+% Joshua Yeh
+% Date: 190521
+% This script finds the boundaries that divides unphysical/physcial
+% meaningfull chromatic coordinates in the TCC and GCC chromatic space.
+
 R_space=linspace(-0.1,0.05,1e3);
 G_space=linspace(-0.1,0.05,1e3);
 
