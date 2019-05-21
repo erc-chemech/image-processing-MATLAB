@@ -45,6 +45,8 @@ function RGB_analysis(filename,frames,varargin)
 % 0], corresponding to R, G, B, respectively). Note that the value array
 % must have three elements.
 % 
+% 'dynamic_plots': toggle for enabling dynamic plots
+% 
 %% OUTPUT
 % Note that all the variables in this fcn will be placed in the caller
 % workspace.
@@ -66,6 +68,7 @@ params.addParameter('border_offset',15,@(x) isnumeric(x));
 params.addParameter('crop_border',50,@(x) isnumeric(x));
 params.addParameter('time_offset',0,@(x) isnumeric(x));
 params.addParameter('CC_ref',[0 0 0],@(x) isnumeric(x)&numel(x)==3);
+params.addParameter('dynamic_plots',1,@(x) isnumeric(x));
 params.parse(varargin{:});
 
 % Extract out values from parsed input
@@ -81,6 +84,7 @@ border_offset=params.Results.border_offset;
 crop_border=params.Results.crop_border;
 t_offset=params.Results.time_offset;
 CC_ref=params.Results.CC_ref;
+dynamic_plots=params.Results.dynamic_plots;
 
 % Preallocate arrays to speed algorithm
 abs_frame_index=nan(numel(frames),1);% absolute frame number
@@ -112,43 +116,45 @@ if ~isempty(m_file)
     [kr,kc]=ind2sub(size(txt),k);
     m_time=[raw{kr+1:end,kc}]';
 end
-        
-% Figure creation
-f1=my_fig(1,{[3 2 1 5] [3 2 2] [3 2 6] [3 2 4]},'fontsize',14);
 
-% Figure and axes formatting
-set(f1.s1,'fontsize',6,'ydir','reverse','box','off');
-axis(f1.s1,'image');
-set(findall(f1.f,'type','axes'),'nextplot','add');
+if dynamic_plots==1
+    % Figure creation
+    f1=my_fig(1,{[3 2 1 5] [3 2 2] [3 2 6] [3 2 4]},'fontsize',14);
 
-% Create dynamic plot handles
+    % Figure and axes formatting
+    set(f1.s1,'fontsize',6,'ydir','reverse','box','off');
+    axis(f1.s1,'image');
+    set(findall(f1.f,'type','axes'),'nextplot','add');
 
-% axes associated with the frame
-f1.image=imagesc(f1.s1,uint64(ones(2)));
-f1.horizontal=plot(f1.s1,nan,nan,'k--');
-f1.vertical=plot(f1.s1,nan,nan,'k--');
-f1.ROI=plot(f1.s1,nan,nan,'r-');
-f1.white=plot(f1.s1,nan,nan,'r--');
-f1.top_bar=plot(f1.s1,nan,nan,'r-');
-f1.bot_bar=plot(f1.s1,nan,nan,'r-');
+    % Create dynamic plot handles
 
-% chromatic values vs time
-f1.R_mean=plot(f1.s2,time_store,R_mean,'r.','markersize',14);
-f1.G_mean=plot(f1.s2,time_store,R_mean,'g.','markersize',14);
-f1.B_mean=plot(f1.s2,time_store,R_mean,'b.','markersize',14);
-xylabels(f1.s2,'time (s)','RGB ratio');
+    % axes associated with the frame
+    f1.image=imagesc(f1.s1,uint64(ones(2)));
+    f1.horizontal=plot(f1.s1,nan,nan,'k--');
+    f1.vertical=plot(f1.s1,nan,nan,'k--');
+    f1.ROI=plot(f1.s1,nan,nan,'r-');
+    f1.white=plot(f1.s1,nan,nan,'r--');
+    f1.top_bar=plot(f1.s1,nan,nan,'r-');
+    f1.bot_bar=plot(f1.s1,nan,nan,'r-');
 
-% chromatic change vs stress
-f1.mR=plot(f1.s3,nan,nan,'r.');
-f1.mG=plot(f1.s3,nan,nan,'g.');
-f1.mB=plot(f1.s3,nan,nan,'b.');
-xylabels(f1.s3,'nominal stress (MPa)','\DeltaRGB');
+    % chromatic values vs time
+    f1.R_mean=plot(f1.s2,time_store,R_mean,'r.','markersize',14);
+    f1.G_mean=plot(f1.s2,time_store,R_mean,'g.','markersize',14);
+    f1.B_mean=plot(f1.s2,time_store,R_mean,'b.','markersize',14);
+    xylabels(f1.s2,'time (s)','RGB ratio');
 
-% chromatic change vs time
-f1.delR=plot(f1.s4,nan,nan,'r.','markersize',14);
-f1.delG=plot(f1.s4,nan,nan,'g.','markersize',14);
-f1.delB=plot(f1.s4,nan,nan,'b.','markersize',14);
-xylabels(f1.s4,'time (s)','\DeltaRGB ratio');
+    % chromatic change vs stress
+    f1.mR=plot(f1.s3,nan,nan,'r.');
+    f1.mG=plot(f1.s3,nan,nan,'g.');
+    f1.mB=plot(f1.s3,nan,nan,'b.');
+    xylabels(f1.s3,'nominal stress (MPa)','\DeltaRGB');
+
+    % chromatic change vs time
+    f1.delR=plot(f1.s4,nan,nan,'r.','markersize',14);
+    f1.delG=plot(f1.s4,nan,nan,'g.','markersize',14);
+    f1.delB=plot(f1.s4,nan,nan,'b.','markersize',14);
+    xylabels(f1.s4,'time (s)','\DeltaRGB ratio');
+end
 
 %%
 % Video file is too large to import all of the frames into memory. Thus,
@@ -170,6 +176,9 @@ mov(1).CData=[];%preallocate structure array
 count1=1;% Counter counting the iteration for each while loop
 count2=1;% Counter counting the iteration # in 'frame' array being looped
 check=0;% a flag for checking if frame is new (0 for dupli. 1 for new)
+
+try
+
 while hasFrame(Vidobj)&&count1<=max(frames)
     
     % Import current frame
@@ -229,7 +238,9 @@ while hasFrame(Vidobj)&&count1<=max(frames)
         mark_xy2=cat(1,mark_xy2,mark_xy2(1,:));%close the box
         
         % show the white_ROI
-        set(f1.white,'xdata',mark_xy2(:,1),'ydata',mark_xy2(:,2));
+        if dynamic_plots==1
+            set(f1.white,'xdata',mark_xy2(:,1),'ydata',mark_xy2(:,2));
+        end
     end
     
     %check to see whether or not to process frame
@@ -371,49 +382,53 @@ while hasFrame(Vidobj)&&count1<=max(frames)
             TCC=sqrt(RCC.^2+GCC.^2+BCC.^2);
 
             % Plot delta_RGB values
-            set(f1.delR,'xdata',time_store,'ydata',RCC);
-            set(f1.delG,'xdata',time_store,'ydata',GCC);
-            set(f1.delB,'xdata',time_store,'ydata',BCC);
+            if dynamic_plots==1
+                set(f1.delR,'xdata',time_store,'ydata',RCC);
+                set(f1.delG,'xdata',time_store,'ydata',GCC);
+                set(f1.delB,'xdata',time_store,'ydata',BCC);
+            end
             
             % Plot chromaticity vs mechanical response
-            if ~isempty(m_file)
+            if ~isempty(m_file)&&dynamic_plots==1
                 set(f1.mR,'xdata',stress_q,'ydata',RCC);
                 set(f1.mG,'xdata',stress_q,'ydata',GCC);
                 set(f1.mB,'xdata',stress_q,'ydata',BCC);
             end
         end
         
-        % Display the color corrected image
-        set(f1.image,'cdata',uint8(rgb_correction(frame,white,'simple',255)));
+        if dynamic_plots==1
+            % Display the color corrected image
+            set(f1.image,'cdata',uint8(rgb_correction(frame,white,'simple',255)));
 
-        % Plot horizontal divider    
-        set(f1.horizontal,'XData',[1 size(frame_corr,2)],...
-            'YData',ones(1,2).*(h_divider));
+            % Plot horizontal divider    
+            set(f1.horizontal,'XData',[1 size(frame_corr,2)],...
+                'YData',ones(1,2).*(h_divider));
 
-        % Plot vertical divider    
-        set(f1.vertical,'xdata',ones(1,2).*v_divider,...
-            'ydata',[1 size(frame_corr,1)]);
-        
-        % Plot sample ROI
-        set(f1.ROI,'xdata',...
-            [left_black right_black right_black left_black left_black],...
-            'ydata',...
-            [bottom_black-border_offset bottom_black-border_offset,...
-            top_black+border_offset top_black+border_offset,...
-            bottom_black-border_offset]);
-        
-        % Plot sample top line
-        set(f1.top_bar,'xdata',[left_black right_black],...
-            'ydata',[top_black top_black]);
-        
-        % Plot sample bottom line
-        set(f1.bot_bar,'xdata',[left_black right_black],...
-            'ydata',[bottom_black bottom_black]);
+            % Plot vertical divider    
+            set(f1.vertical,'xdata',ones(1,2).*v_divider,...
+                'ydata',[1 size(frame_corr,1)]);
 
-        % Plot mean of subimage area
-        set(f1.R_mean,'YData',R_mean,'xdata',time_store);
-        set(f1.G_mean,'YData',G_mean,'xdata',time_store);
-        set(f1.B_mean,'YData',B_mean,'xdata',time_store);
+            % Plot sample ROI
+            set(f1.ROI,'xdata',...
+                [left_black right_black right_black left_black left_black],...
+                'ydata',...
+                [bottom_black-border_offset bottom_black-border_offset,...
+                top_black+border_offset top_black+border_offset,...
+                bottom_black-border_offset]);
+
+            % Plot sample top line
+            set(f1.top_bar,'xdata',[left_black right_black],...
+                'ydata',[top_black top_black]);
+
+            % Plot sample bottom line
+            set(f1.bot_bar,'xdata',[left_black right_black],...
+                'ydata',[bottom_black bottom_black]);
+
+            % Plot mean of subimage area
+            set(f1.R_mean,'YData',R_mean,'xdata',time_store);
+            set(f1.G_mean,'YData',G_mean,'xdata',time_store);
+            set(f1.B_mean,'YData',B_mean,'xdata',time_store);
+        end
         
         drawnow;
         count2=count2+1;% update counter
@@ -421,7 +436,16 @@ while hasFrame(Vidobj)&&count1<=max(frames)
     count1=count1+1;% update counter
 end
 
-linkaxes([f1.s2 f1.s4],'x');
+catch
+    % export fcn workspace to caller workspace
+    W=who;
+    out_var(W{:});
+
+end% try
+
+if dynamic_plots==1
+    linkaxes([f1.s2 f1.s4],'x');
+end
 
 % get rid of extraneous nans at the end of the array
 R_mean=R_mean(~isnan(time_store));
