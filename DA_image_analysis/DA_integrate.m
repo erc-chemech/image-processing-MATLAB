@@ -38,6 +38,9 @@ function results=DA_integrate(filename,ffmat,dmap,varargin)
 % 'edge_detect': 'manual' or 'auto' (default) mode for defining the sample
 % crack edge
 % 
+% 'integrate_d': define an integration distance (um) (default is empty and
+% use the noise threshold to determine th integration distance).
+% 
 %% parse input variables
 narginchk(3,inf);
 params=inputParser;
@@ -52,6 +55,7 @@ params.addParameter('binarize_thresh',1400,@(x) isnumeric(x));
 params.addParameter('r_divide',500,@(x) isnumeric(x));
 params.addParameter('edge_detect','auto',@(x) ischar(x)&&...
     (strcmp(x,'auto')||strcmp(x,'manual')));
+params.addParameter('integrate_d',[],@(x) isnumeric(x));
 params.parse(varargin{:});
 
 % Extract out values from parsed input
@@ -64,6 +68,7 @@ thresh=params.Results.thresh;
 binarize_thresh=params.Results.binarize_thresh;
 r_divide=params.Results.r_divide;
 edge_detect=params.Results.edge_detect;
+integrate_d=params.Results.integrate_d;
 
 % import image
 I=import_tiff_stack(filename,1,'skip',1,'silence',1);
@@ -227,18 +232,31 @@ end
 % intensity as nan
 improfiles2=improfiles;
 improfiles2(isnan(improfiles2))=0;%convert nans to 0s
+Hs=linspace(0,H,size(improfiles2,2));%integration dist. from edge (um)
 improfiles_mean=nanmean(improfiles2,1);%mean of all line intensity profiles
 improfiles_std=nanstd(improfiles2,1,1);%std of all line intensity profiles
-cut_i=find(improfiles_mean<thresh);% find cutoff to thresh noise
+
+% find cutoff to thresh noise
+%if user does not define integration length, use noise cutoff
+if isempty(integrate_d)==1
+    cut_i=find(improfiles_mean<thresh);
+elseif isempty(integrate_d)==0
+    cut_i=knnsearch(Hs',integrate_d);
+end
+
 if ~isempty(cut_i)
+    % check to see if the thresh cut off is before or after the peak
+    % intensity. If it is before, remove those indices.
     [~,idx]=nanmax(improfiles_mean);
     cut_i2=find(cut_i>idx,1,'first');
     cut_i=cut_i(cut_i2);
-else%if all intensities are above thresh noise
+    if isempty(cut_i)==1%check to see if the thresh cut off is empty
+        cut_i=numel(improfiles_mean);
+    end
+elseif isempty(cut_i)==1%if all intensities are above thresh noise
     cut_i=numel(improfiles_mean);
 end
 
-Hs=linspace(0,H,size(improfiles2,2));%integration dist. from edge (um)
 SI=cumsum(improfiles_mean(1:cut_i),2);%integrated intensity
 if isempty(SI)
     disp('Something went wrong with the integration!');
