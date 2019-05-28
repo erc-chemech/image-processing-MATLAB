@@ -560,7 +560,7 @@ f3.s2=axes;
 f3.s3=axes;
 set(f3.s2,'position',[0.65 0.7 0.1 0.3]);
 set(f3.f,'name','Color mapping of reference sample area');
-xylabels(f3.s1,'Green chromatic change','Total chromatic change');
+xylabels(f3.s1,'green chromatic change','total chromatic change');
 set(f3.s3,'position',f3.s1.Position,'color','none','box','off',...
     'xcolor','none','ycolor','none','view',f1.s1.View);
 
@@ -591,7 +591,7 @@ plot3(f3.s1,polyval(TCCvGCC_load,TCC_load_n)+thresh_GCC,TCC_load,...
 plot3(f3.s1,polyval(TCCvGCC_load,TCC_load_n)-thresh_GCC,TCC_load,...
     ones(1,numel(TCC_load)).*100,'--','color',ones(1,3).*0.7);
 f3.c1=colorbar(f3.s1,'location','eastoutside');
-f3.c1.YLabel.String='Stress (MPa)';
+f3.c1.YLabel.String='nominal stress (MPa)';
 colormap(f3.s1,'summer');
 set(f3.s1,'clim',clim_iso_stress,'xlim',[-0.1 0.05],'ylim',[0 0.15]);
 center_axes(f3.s1);
@@ -622,7 +622,7 @@ set(f3.s2,'box','off','xcolor','none','ycolor','none','xtick',[],...
 f4=my_fig(4,{[1 1 1]},'visible',visible);
 f4.f.Alphamap=linspace(0,1,256);
 set(f4.f,'name','Color mapping of activated sample area');
-xylabels(f4.s1,'Green chromatic change','Total chromatic change');
+xylabels(f4.s1,'green chromatic change','total chromatic change');
 set(f4.s1,'xlim',[-0.04 0.04],'ylim',[0 0.08]);
 axis(f4.s1,'image');
 
@@ -644,7 +644,7 @@ plot(f4.s1,G_space,RGB2,'-','color',ones(1,3).*0.7);
 copyobj(findall(f3.s1,'type','line','linestyle','--'),f4.s1);
 set(f4.s1,'clim',clim_iso_stress,'ylim',[0 0.15],'xlim',[-0.1 0.05]);
 f4.c1=colorbar(f4.s1,'location','eastoutside');
-f4.c1.YLabel.String='Stress (MPa)';
+f4.c1.YLabel.String='nominal stress (MPa)';
 colormap(f4.s1,'summer');
 center_axes(f4.s1);
 
@@ -695,7 +695,7 @@ if stress_calc==1
     axis(f7.s2,'image');
     axis(f7.s3,'image');
     uistack(f7.s4,'top');
-    xylabels(f7.s2,'Green chromatic change','Total chromatic change');
+    xylabels(f7.s2,'green chromatic change','total chromatic change');
     
     copyobj(findall(f5.s1,'type','image'),f7.s1);% copy image frame
     axis(f7.s1,'image');
@@ -744,7 +744,7 @@ if stress_calc==1
     f7.ct=annotation('textbox');
     f7.ct.Position(1:2)=[f7.s1.Position(1)+...
         (f7.s1.Position(3)-f7.ct.Position(3))/2 0.275];
-    set(f7.ct,'horizontalalignment','center','string','Stress (MPa)',...
+    set(f7.ct,'horizontalalignment','center','string','nominal stress (MPa)',...
         'edgecolor','none','backgroundcolor','none','fontname',f7.s1.FontName);
     set(f7.s4,'position',f7.s1.Position,'xlim',f7.s1.XLim,'ylim',f7.s1.YLim,...
         'box','off','xcolor','none','ycolor','none','xtick',[],'ytick',[]);
@@ -756,7 +756,7 @@ if stress_calc==1
     linkaxes([f7.s2 f7.s3],'xy');
     f7.c3=colorbar(f7.s3);
     colormap(f7.s3,'summer');
-    f7.c3.YLabel.String='Stress (MPa)';
+    f7.c3.YLabel.String='nominal stress (MPa)';
     set(f7.s3,'clim',clim_iso_stress,'position',f7.s2.Position,...
         'xlim',f4.s1.XLim,'ylim',f4.s1.YLim);
     f7.s3.Position=[0.55 0.45 0.3 0.5];
