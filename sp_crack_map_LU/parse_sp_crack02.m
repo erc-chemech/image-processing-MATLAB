@@ -92,6 +92,8 @@ function parse_sp_crack02(filename,frame_n,varargin)
     %
     % 'ss_file': stress-extension data on the video time axis (xls file).
     %     
+    % 'rot': image rotate counterclockwise to the frame (in deg).
+    %
 %% Parse input variables
 
 narginchk(1,inf);%check the number of input values
@@ -131,6 +133,7 @@ params.addParameter('color_stress_map','TN135_color_stress_map.mat',...
 params.addParameter('load_clim',[0 6],@(x) isnumeric(x));
 params.addParameter('unload_clim',[0 2],@(x) isnumeric(x));
 params.addParameter('ss_file',[],@(x) ischar(x));
+params.addParameter('rotate',[],@(x) isnumeric(x));
 params.parse(varargin{:});
 
 %Extract out values from parsed input
@@ -160,6 +163,7 @@ color_stress_map=params.Results.color_stress_map;
 load_clim=params.Results.load_clim;
 unload_clim=params.Results.unload_clim;
 ss_file=params.Results.ss_file;
+rot=params.Results.rotate;
 
 if video_mode==1
     visible='off';
@@ -232,6 +236,11 @@ end
 % Crop our ROI
 subimage=frame(2).CData(ROI(1):ROI(2),ROI(3):ROI(4),:);
 ref=frame(1).CData(ref_ROI(1):ref_ROI(2),ref_ROI(3):ref_ROI(4),:);
+
+% check to see if the user specifified image rotation
+if~isempty(rot)
+    subimage=imrotate(subimage,rot);
+end
 
 % Define white refference area
 white_ref=frame(1).CData(white_ref_ROI(1):white_ref_ROI(2),...
@@ -568,7 +577,7 @@ set(f3.s3,'position',f3.s1.Position,'color','none','box','off',...
 
 % import the iso-stress lines
 try delete(fcsm.f); catch; end
-fcsm.f=openfig('CSM_TN135.fig','invisible');
+fcsm.f=openfig(csmfile,'invisible');
 fcsm.s0=findall(fcsm.f,'type','axes');
 clim_iso_stress=fcsm.s0.CLim;
 delete(findall(fcsm.f,'color',ones(1,3).*0.7));
@@ -630,7 +639,7 @@ axis(f4.s1,'image');
 
 % import the iso-stress lines
 try delete(fcsm.f); catch; end
-fcsm.f=openfig('CSM_TN135.fig','invisible');
+fcsm.f=openfig(csmfile,'invisible');
 fcsm.s0=findall(fcsm.f,'type','axes');
 clim_iso_stress=fcsm.s0.CLim;
 delete(findall(fcsm.f,'color',ones(1,3).*0.7));
@@ -712,7 +721,7 @@ if stress_calc==1
     axis(f7.s4,'image');
     
     z_load=px_coord2image(IA(m3,8),IA(m3,9),m3_s,size(ref_corr));
-    far_field=nanmean(nanmean(z_load(:,end-10:end)));
+    far_field=nanmean(nanmean(z_load(:,end-5:end)));
     disp(['far field stress (MPa): ',num2str(far_field)]);
     
     if ~isempty(ss_file)
