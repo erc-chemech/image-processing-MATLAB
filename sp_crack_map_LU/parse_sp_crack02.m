@@ -601,7 +601,7 @@ plot3(f3.s1,polyval(TCCvGCC_load,TCC_load_n)-thresh_GCC,TCC_load,...
     ones(1,numel(TCC_load)).*100,'--','color',ones(1,3).*0.7);
 f3.c1=colorbar(f3.s1,'location','eastoutside');
 f3.c1.YLabel.String='nominal stress (MPa)';
-colormap(f3.s1,'summer');
+colormap(f3.s1,'hot');
 set(f3.s1,'clim',clim_iso_stress,'xlim',[-0.1 0.05],'ylim',[0 0.15]);
 center_axes(f3.s1);
 
@@ -654,7 +654,7 @@ copyobj(findall(f3.s1,'type','line','linestyle','--'),f4.s1);
 set(f4.s1,'clim',clim_iso_stress,'ylim',[0 0.15],'xlim',[-0.1 0.05]);
 f4.c1=colorbar(f4.s1,'location','eastoutside');
 f4.c1.YLabel.String='nominal stress (MPa)';
-colormap(f4.s1,'summer');
+colormap(f4.s1,'hot');
 center_axes(f4.s1);
 
 % Transform chromatic datapoints to 2d histogram array (m0)
@@ -764,7 +764,7 @@ if stress_calc==1
     uistack(f7.s3,'bottom');
     linkaxes([f7.s2 f7.s3],'xy');
     f7.c3=colorbar(f7.s3);
-    colormap(f7.s3,'summer');
+    colormap(f7.s3,'hot');
     f7.c3.YLabel.String='nominal stress (MPa)';
     set(f7.s3,'clim',clim_iso_stress,'position',f7.s2.Position,...
         'xlim',f4.s1.XLim,'ylim',f4.s1.YLim);
