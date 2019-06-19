@@ -41,7 +41,7 @@ top_roi0=top_roi;
 bot_roi0=bot_roi;
 %% parse input
 
-narginchk(5,inf);
+narginchk(4,inf);
 params=inputParser;
 params.CaseSensitive=false;
 params.addParameter('xlsfile',[],@(x) ischar(x));

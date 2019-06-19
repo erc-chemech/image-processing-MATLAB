@@ -39,6 +39,7 @@ rot=params.Results.rotate;
 handles=guidata(figure(100));
 handles.f1.f=gcf;clf(handles.f1.f);
 handles.f1.s1=axes;
+handles.f1.s1.TickDir='out';
 handles.virgin_flag=1;
 
 %Show each frame
@@ -122,6 +123,7 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
         drawnow;
         handles.go.String=handles.current;
         handles.virgin_flag=0;
+        handles.f1.s1.TickDir='out';
         guidata(handles.f1.f,handles);%update the handles structure
     
 
@@ -165,6 +167,7 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
         drawnow;
         handles.go.String=handles.current;
         handles.virgin_flag=0;
+        handles.f1.s1.TickDir='out';
         guidata(handles.f1.f,handles);%update the handles structure
     
 
@@ -209,5 +212,6 @@ guidata(handles.f1.f,handles);%create handles structure for the figure window
         ', Timestamp: ',num2str(handles.mov(ii).CurrentTime)]);
         drawnow;
         handles.virgin_flag=0;
+        handles.f1.s1.TickDir='out';
         guidata(handles.f1.f,handles);%update the handles structure
     
