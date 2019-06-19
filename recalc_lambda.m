@@ -264,6 +264,8 @@ try%need this try block to prevent mac users from erring out
     else
         xlswrite(xlsfile,[headers;data]);
     end
+catch
+    disp('Something went wrong with xls export.');
 end
 
 % export fcn workspace to caller workspace
