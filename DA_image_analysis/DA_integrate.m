@@ -122,9 +122,9 @@ y=y-dy;
 
 % Performing 2D binning of current image
 [I1,A,B]=coord2image(x,y,intensity,w2,'mean');
-I1=I1-thresh;%remove background threshold
+% I1=I1-thresh;%remove background threshold
 I1=medfilt2(I1,[3 3]);%2d median filter
-I1(I1<0)=nan;%set values below 0 as nan
+I1(I1<thresh)=nan;%set values below 0 as nan
 
 %% fit a linear line to straight edge
 
