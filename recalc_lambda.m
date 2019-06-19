@@ -256,12 +256,14 @@ data=[time_store,lambda,stress_q,frames'];
 data=mat2cell(data,ones(size(data,1),1),[1 1 1 1]);
 headers={'Time (s)','Lambda','Stress (MPa)','frame #'};
 
-if isempty(xlsfile)
-    [filepath,name,ext] = fileparts(filename);
-    name=[name,'_recalc_lam'];
-    xlswrite(name,[headers;data]);
-else
-    xlswrite(xlsfile,[headers;data]);
+try%need this try block to prevent mac users from erring out
+    if isempty(xlsfile)
+        [filepath,name,ext] = fileparts(filename);
+        name=[name,'_recalc_lam'];
+        xlswrite(name,[headers;data]);
+    else
+        xlswrite(xlsfile,[headers;data]);
+    end
 end
 
 % export fcn workspace to caller workspace
