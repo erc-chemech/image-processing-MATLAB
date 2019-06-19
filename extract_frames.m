@@ -256,18 +256,20 @@ while hasFrame(Vidobj)
     end
     
     % Warn the user if the number of extracted frames exceed 500
-    if mod(k,100)==0&&k>500
-        [user,~] = memory;%get memory
-        if user.MemAvailableAllArrays/1e6<3000
-            % display warning and memory stats
-            warning([newline,'MemAvailableAllArrays: ',...
-                num2str(user.MemAvailableAllArrays./1e6),'MB',newline,...
-                'MemUsedMATLAB: ',num2str(user.MemUsedMATLAB./1e6),'MB',newline,...
-                'Number of frames extracted is over 500. '...
-                'MATLAB can crash if memory usage is too high!',newline,...
-                'Use Crtl+c in the command window to terminate!']);
-            pause(2);
-        end
+    try%put in try block so that mac users will not error out
+		if mod(k,100)==0&&k>500
+			[user,~] = memory;%get memory
+			if user.MemAvailableAllArrays/1e6<3000
+				% display warning and memory stats
+				warning([newline,'MemAvailableAllArrays: ',...
+					num2str(user.MemAvailableAllArrays./1e6),'MB',newline,...
+					'MemUsedMATLAB: ',num2str(user.MemUsedMATLAB./1e6),'MB',newline,...
+					'Number of frames extracted is over 500. '...
+					'MATLAB can crash if memory usage is too high!',newline,...
+					'Use Crtl+c in the command window to terminate!']);
+				pause(2);
+			end
+		end
     end
     n=n+1;
 end
@@ -277,8 +279,10 @@ mov=mov(1:k-1);
 
 disp('Import successful');
 disp(['Imported ',num2str(k-1),' frame(s)']);
-[user,~] = memory;
-disp([newline,'MemAvailableAllArrays: ',...
-    num2str(user.MemAvailableAllArrays./1e6),'MB',newline,...
-    'MemUsedMATLAB: ',num2str(user.MemUsedMATLAB./1e6),'MB']);
+try%put in try block to prevent mac users will not error out
+	[user,~] = memory;
+	disp([newline,'MemAvailableAllArrays: ',...
+		num2str(user.MemAvailableAllArrays./1e6),'MB',newline,...
+		'MemUsedMATLAB: ',num2str(user.MemUsedMATLAB./1e6),'MB']);
+end
 disp(' ');
