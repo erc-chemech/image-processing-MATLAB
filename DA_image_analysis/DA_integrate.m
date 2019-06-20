@@ -24,7 +24,7 @@ function results=DA_integrate(filename,ffmat,dmap,varargin)
 % on the flat-field correction array
 %
 % 'res_p': length of the perpendicular line profile rel. to the edge in
-% pxs
+% pxs (after distortion correction)
 % 
 % 'n_cuts': number of line cuts along the crack edge in pxs
 % 
@@ -124,7 +124,7 @@ y=y-dy;
 [I1,A,B]=coord2image(x,y,intensity,w2,'mean');
 % I1=I1-thresh;%remove background threshold
 I1=medfilt2(I1,[3 3]);%2d median filter
-I1(I1<thresh)=nan;%set values below 0 as nan
+I1(I1<thresh)=nan;%set values below thresh as nan
 
 %% fit a linear line to straight edge
 
@@ -257,10 +257,16 @@ elseif isempty(cut_i)==1%if all intensities are above thresh noise
     cut_i=numel(improfiles_mean);
 end
 
+% get set signal below noise to 0
+improfiles_mean(improfiles_mean<=thresh)=0;
+
 SI=cumsum(improfiles_mean(1:cut_i),2);%integrated intensity
 if isempty(SI)
     disp('Something went wrong with the integration!');
 end
+
+% set 0s in improfiles_mean to nan
+improfiles_mean(improfiles_mean==0)=nan;
 
 %% store the results
 results.Hs=Hs(1:cut_i);%integration dist. from edge (um)
@@ -280,7 +286,8 @@ if ~isempty(calfile)
 end
 
 % plot suf. integ. results
-plot(f2.s1,Hs(1:cut_i),SI,'o-');
+kk=~isnan(results.improfiles_avg);
+plot(f2.s1,results.Hs(kk),results.SI(kk),'o-');
 center_axes(f2.s1);
 
 % plot the histogram intensities
@@ -292,7 +299,7 @@ center_axes(f3.s1);
 
 % plot avg intensity profile
 f4=my_fig(4);
-plot(f4.s1,Hs,improfiles_mean);
+plot(f4.s1,results.Hs,results.improfiles_avg,'-o');
 xylabels(f4.s1,'distance from crack edge (\mum)','intensity (a.u.)');
 center_axes(f4.s1);
 
